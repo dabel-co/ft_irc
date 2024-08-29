@@ -12,11 +12,9 @@
 #include <fcntl.h>
 #include <iostream>
 #include <poll.h>
-#include <algorithm>
-#include <cstdio>
 #include <unistd.h>
 
-Server::Server(const std::string& port, const std::string& pw) : port(port), pw(pw), status(1) {
+Server::Server(const std::string& port, const std::string& pw) : port(port), pw(pw), running(true) {
     this->host = "127.0.0.1"; //Default for running local
     this->server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (!server_socket)
@@ -37,53 +35,62 @@ Server::Server(const std::string& port, const std::string& pw) : port(port), pw(
         throw std::runtime_error("Failed to set socket to non blocking");
     if (bind(server_socket, (sockaddr *)&socket_conf, sizeof(socket_conf)) == -1)
         throw std::runtime_error("Failed to bind socket");
-    if (listen(server_socket, 100) == -1)   //100 is the max number of connections this IRC will handle
+    if (listen(server_socket, 100) == -1)
         throw std::runtime_error("Failed to listen on socket");
 }
 Server::~Server(){}
 
 void Server::run() {
-    pollfd pf = {server_socket, POLLIN, 0};
-    this->fds.push_back(pf);
-    while(this->status == 1) {
-        if (poll(&fds[0], this->fds.size(), -1) < 0)
-            throw std::runtime_error("Failed to poll");
-        for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end(); ++it) {
-          std::cout << "size = " << fds.size() << std::endl;
-            if (it->revents == 0)
-                continue;
-            if ((it->revents & POLLIN) == POLLIN) {
-                if (it->fd == server_socket) {
-                    connect();
-                    break;
-                }
-                char buffer[1024];
-                int s = read(it->fd, buffer, 1024);
-                if (s == 0){
-                    fds.erase(it);
-                    close(it->fd);
-                    std::cout << "Debug : A client left!" << std::endl;
-                    break;
-                }
-                message(it->fd, buffer);
-            }
+    epfd = epoll_create1(0);
+    if (epfd == -1)
+        throw std::runtime_error("Error creating epoll instance.");
+    epoll_event ev;
+    ev.events = EPOLLIN;
+    ev.data.fd = server_socket;
+    if (epoll_ctl(epfd, EPOLL_CTL_ADD, server_socket, &ev) == -1)
+        throw std::runtime_error("Error adding server socket to epoll.");
+    while (running) {
+        epoll_event ev_fd[MAX_EVENTS]; // Adjust MAX_EVENTS as needed
+        int num_events = epoll_wait(epfd, ev_fd, MAX_EVENTS, -1);
+        if (num_events == -1)
+            throw std::runtime_error("Error while waiting on epoll.");
+        for (int i = 0; i < num_events; ++i) {
+            if (ev_fd[i].events & (EPOLLRDHUP | EPOLLHUP))
+                disconnect(ev_fd[i].data.fd);
+            else if ((ev_fd[i].data.fd == server_socket) & EPOLLIN)
+                connect();
+            else if (ev_fd[i].events & EPOLLIN)
+                message(ev_fd[i].data.fd);
         }
     }
-
+    close(epfd);
 }
 
-void Server::connect() {
+void Server::connect() const {
     std::cout << "Debug : New client!" << std::endl;
     sockaddr_in client_addr = {};
     bzero(&client_addr, sizeof(client_addr));
     socklen_t s_size = sizeof(client_addr);
     int fd = accept(server_socket, (sockaddr *) &client_addr, &s_size);
-    pollfd pf = {fd, POLLIN, 0};
-    fds.push_back(pf);
+
+    epoll_event ev;
+    ev.events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP;
+    ev.data.fd = fd;
+
+    if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1)
+        throw std::runtime_error("Error adding client to epoll");
 }
 
-void Server::message(int fd, char *buffer) {
-  std::cout << fd <<  buffer << std::endl;
+void Server::disconnect(int fd) const {
+    std::cout << "Debug : Client left!" << std::endl;
+    if (epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL) == -1)
+        throw std::runtime_error("Error removing client from epoll");
+}
+
+void Server::message(int fd) {
+    char buffer[1024] = {};
+    read(fd, buffer, 1024);
+    std::cout << "Message : " << buffer << std::endl;
 }
 
 
