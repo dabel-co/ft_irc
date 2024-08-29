@@ -2,7 +2,7 @@
 // Created by dabel-co on 27/08/24.
 //
 
-#include "Server.h"
+#include "../inc/Server.h"
 #include <sys/socket.h>
 #include <stdexcept>
 #include <netinet/in.h>
@@ -11,8 +11,8 @@
 #include <strings.h>
 #include <fcntl.h>
 #include <iostream>
-#include <poll.h>
 #include <unistd.h>
+#include <sys/epoll.h>
 
 Server::Server(const std::string& port, const std::string& pw) : port(port), pw(pw), running(true) {
     this->host = "127.0.0.1"; //Default for running local
@@ -66,7 +66,7 @@ void Server::run() {
     close(epfd);
 }
 
-void Server::connect() const {
+void Server::connect() {
     std::cout << "Debug : New client!" << std::endl;
     sockaddr_in client_addr = {};
     bzero(&client_addr, sizeof(client_addr));
@@ -79,12 +79,17 @@ void Server::connect() const {
 
     if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1)
         throw std::runtime_error("Error adding client to epoll");
+    s_clients[fd] = new Client(fd);
+    std::cout << "Number of Clients = " << s_clients.size() << "\n";
 }
 
-void Server::disconnect(int fd) const {
+void Server::disconnect(int fd){
     std::cout << "Debug : Client left!" << std::endl;
     if (epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL) == -1)
         throw std::runtime_error("Error removing client from epoll");
+    delete s_clients[fd];
+    s_clients.erase(fd);
+    std::cout << "Number of Clients = " << s_clients.size() << "\n";
 }
 
 void Server::message(int fd) {
