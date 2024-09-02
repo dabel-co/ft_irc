@@ -1,5 +1,6 @@
 //
 // Created by dabel-co on 27/08/24.
+// Coauthor: lvarela
 //
 
 #ifndef SERVER_H
@@ -9,23 +10,25 @@
 #include <sys/epoll.h>
 #include <map>
 #include "Client.h"
+
 class Server {
-public:
-    Server(const std::string& port, const std::string& pw);
-    ~Server();
-    void run();
-    void connect();
-    void disconnect(int fd);
-    void message(int fd);
-private:
-    std::string port;
-    std::string pw;
-    std::string host;
-    bool        running;
-    int         server_socket;
-    int epfd;
+    private:
+        std::string port;
+        std::string pw;
+        std::string host;
+        bool        running;
+        int         server_socket;
+        int         epfd;
 
-    std::map<int, Client*> s_clients;
+    public:
+        std::map<int, Client*> s_clients;
 
+        Server(const std::string& port, const std::string& pw);
+        ~Server();
+        void run();
+        void connect();
+        void disconnect(int fd);
+        void message(int fd);
 };
+
 #endif //SERVER_H
