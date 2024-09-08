@@ -26,9 +26,11 @@ class Server {
         Server(const std::string& port, const std::string& pw);
         ~Server();
         void run();
-        void connect();
+        void add_to_epoll(int fd, uint32_t events);
+        void handle_events();
+        void accept_new_connection();
         void disconnect(int fd);
-        void message(int fd);
+        void handle_message(int fd);
 };
 
 #endif //SERVER_H
