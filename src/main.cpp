@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "../inc/Server.h"
+#include "../inc/Server.hpp"
 
 int main(int argc, char **argv)
 {

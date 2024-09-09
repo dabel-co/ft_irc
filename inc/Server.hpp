@@ -5,26 +5,42 @@
 
 #ifndef SERVER_H
 #define SERVER_H
+
 #define MAX_EVENTS 100
-#include <string>
-#include <sys/epoll.h>
+
+#include "Client.hpp"
+#include <cstring>
+#include <fcntl.h>
+#include <iostream>
 #include <map>
-#include "Client.h"
+#include <netinet/in.h>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <string>
+#include <strings.h>
+#include <sys/epoll.h>
+#include <sys/epoll.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 class Server {
     private:
-        std::string port;
-        std::string pw;
-        std::string host;
-        bool        running;
-        int         server_socket;
-        int         epfd;
+        const std::string   port;
+        const std::string   pw;
+        const std::string   host;
+        bool                running;
+        int                 server_socket;
+        int                 epfd;
 
     public:
         std::map<int, Client*> s_clients;
 
         Server(const std::string& port, const std::string& pw);
         ~Server();
+
+        std::string getPw() const;
+
         void run();
         void add_to_epoll(int fd, uint32_t events);
         void handle_events();

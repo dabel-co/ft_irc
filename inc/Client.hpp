@@ -5,16 +5,16 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-
+#include <iostream>
 
 class Client {
-public:
-    Client(int fd);
-    ~Client();
-private:
-    int fd;
+    private:
+        int fd;
+
+    public:
+        Client(int fd);
+        ~Client();
+
 };
-
-
 
 #endif //CLIENT_H
