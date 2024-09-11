@@ -1,7 +1,3 @@
-//
-// Created by dabel-co on 27/08/24.
-// Coauthor: lvarela
-//
 
 #ifndef SERVER_H
 #define SERVER_H
@@ -17,36 +13,36 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <string>
-#include <strings.h>
-#include <sys/epoll.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <functional>
 
 class Server {
     private:
-        const std::string   port;
-        const std::string   pw;
-        const std::string   host;
-        bool                running;
-        int                 server_socket;
-        int                 epfd;
+        const std::string       port;
+        const std::string       pw;
+        const std::string       host;
+        bool                    running;
+        int                     server_socket;
+        int                     epfd;
+        std::map<int, Client*>  s_clients;
+        std::map<std::string, std::function<void(const std::string&)>>  command_handlers;
 
     public:
-        std::map<int, Client*> s_clients;
 
         Server(const std::string& port, const std::string& pw);
         ~Server();
 
-        std::string getPw() const;
+        std::string     getPw() const;
 
-        void run();
-        void add_to_epoll(int fd, uint32_t events);
-        void handle_events();
-        void accept_new_connection();
-        void disconnect(int fd);
-        void handle_message(int fd);
+        void            run();
+        void            add_to_epoll(int fd, uint32_t events);
+        void            handle_events();
+        void            accept_new_connection();
+        void            disconnect(int fd);
+        void            handle_message(int fd);
+        std::string     extract_command(const std::string& msg);
 };
 
 #endif //SERVER_H

@@ -1,6 +1,3 @@
-//
-// Created by dabel-co on 29/08/24.
-//
 
 #include "../inc/Client.hpp"
 
@@ -11,4 +8,11 @@ Client::Client(int fd) : fd(fd) {
 
 Client::~Client() {
   std::cout << "Debug: Client destructor" << std::endl;
+  if (fd != -1) {
+    close(fd);
+  }
+}
+
+int Client::get_fd() const {
+  return fd;
 }

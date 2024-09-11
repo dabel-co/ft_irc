@@ -1,11 +1,9 @@
-//
-// Created by dabel-co on 29/08/24.
-//
 
 #ifndef CLIENT_H
 #define CLIENT_H
 
 #include <iostream>
+#include <unistd.h>
 
 class Client {
     private:
@@ -15,6 +13,7 @@ class Client {
         Client(int fd);
         ~Client();
 
+        int get_fd() const;
 };
 
 #endif //CLIENT_H
