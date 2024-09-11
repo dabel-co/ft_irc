@@ -101,23 +101,23 @@ void Server::handle_events() {
         uint32_t events = ev_fd[i].events;
 
         if (events & (EPOLLRDHUP | EPOLLHUP))
-            disconnect(fd);
+            client_disconnect(fd);
         else if (fd == server_socket && (events & EPOLLIN))
-            accept_new_connection();
+            client_connect();
         else if (events & EPOLLIN)
-            handle_message(fd);
+            client_message(fd);
     }
 }
 
-void Server::accept_new_connection() {
-    std::cout << "Debug: Server.accept_new_connection: New client connection!" << std::endl;
+void Server::client_connect() {
+    std::cout << "Debug: Server.client_connect: New client connection!" << std::endl;
 
     // Accept new connection
     sockaddr_in client_addr = {};
     socklen_t s_size = sizeof(client_addr);
     int fd = accept(server_socket, (sockaddr*)&client_addr, &s_size);
     if (fd == -1)
-        throw std::runtime_error("Debug: Server.accept_new_connection: Error accepting new client.");
+        throw std::runtime_error("Debug: Server.client_connect: Error accepting new client.");
 
     // Set socket to non blocking
     fcntl(fd, F_SETFL, O_NONBLOCK);
@@ -128,15 +128,15 @@ void Server::accept_new_connection() {
     // Add client to map
     s_clients[fd] = new Client(fd);
 
-    std::cout << "Debug: Server.accept_new_connection: Number of Clients = " << s_clients.size() << "\n";
+    std::cout << "Debug: Server.client_connect: Number of Clients = " << s_clients.size() << "\n";
 }
 
-void Server::disconnect(int fd) {
-    std::cout << "Debug: Server.disconnect: Client disconnected!" << std::endl;
+void Server::client_disconnect(int fd) {
+    std::cout << "Debug: Server.client_disconnect: Client client_disconnected!" << std::endl;
 
     // Remove client from epoll
     if (epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL) == -1)
-        throw std::runtime_error("Debug: Server.disconnect: Error removing client from epoll.");
+        throw std::runtime_error("Debug: Server.client_disconnect: Error removing client from epoll.");
 
     // Delete client object
     delete s_clients[fd];
@@ -144,30 +144,30 @@ void Server::disconnect(int fd) {
     // Remove client from map
     s_clients.erase(fd);
 
-    std::cout << "Debug: Server.disconnect: Number of Clients = " << s_clients.size() << "\n";
+    std::cout << "Debug: Server.client_disconnect: Number of Clients = " << s_clients.size() << "\n";
 }
 
-void Server::handle_message(int fd) {
+void Server::client_message(int fd) {
     char buffer[1024] = {};
     ssize_t bytes_read = read(fd, buffer, sizeof(buffer) - 1);
 
     if (bytes_read == -1) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) // Temporally no data available because the socket is non-blocking
             return;
-        std::cerr << "Debug: Server.handle_message: Error reading from socket " << fd << std::endl;
-        disconnect(fd);
+        std::cerr << "Debug: Server.client_message: Error reading from socket " << fd << std::endl;
+        client_disconnect(fd);
         return;
     }
 
     buffer[bytes_read] = '\0';
     std::string message(buffer);
 
-    std::cout << "Debug: Server.handle_message: Message from client " << fd << ": \n" << buffer << std::endl;
+    std::cout << "Debug: Server.client_message: Message from client " << fd << ": \n" << buffer << std::endl;
 
     // Extract command from message
     std::string command = extract_command(message);
 
-    std::cout << "Debug: Server.handle_message: command " << fd << ": \n" << command << std::endl;
+    std::cout << "Debug: Server.client_message: command " << fd << ": \n" << command << std::endl;
 }
 
 std::string Server::extract_command(const std::string& msg) {

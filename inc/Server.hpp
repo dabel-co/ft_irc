@@ -17,6 +17,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <functional>
+#include <cerrno>
 
 class Server {
     private:
@@ -27,7 +28,7 @@ class Server {
         int                     server_socket;
         int                     epfd;
         std::map<int, Client*>  s_clients;
-        std::map<std::string, std::function<void(const std::string&)>>  command_handlers;
+        // std::map<std::string, std::function<void(const std::string&)>>  command_handlers;
 
     public:
 
@@ -39,9 +40,9 @@ class Server {
         void            run();
         void            add_to_epoll(int fd, uint32_t events);
         void            handle_events();
-        void            accept_new_connection();
-        void            disconnect(int fd);
-        void            handle_message(int fd);
+        void            client_connect();
+        void            client_disconnect(int fd);
+        void            client_message(int fd);
         std::string     extract_command(const std::string& msg);
 };
 
