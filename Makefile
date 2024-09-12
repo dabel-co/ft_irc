@@ -3,7 +3,7 @@ CC = clang++
 RM = rm -f
 CXXFLAGS = -Wall -Werror -Wextra -g3 -fsanitize=address -std=c++98
 
-SRCS = src/main.cpp src/Server.cpp src/Client.cpp
+SRCS = src/main.cpp src/Server.cpp src/Client.cpp src/Command.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 

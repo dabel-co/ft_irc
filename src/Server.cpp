@@ -1,13 +1,13 @@
 
 #include "../inc/Server.hpp"
-
+#include "../inc/Command.hpp"
 
 Server::Server(const std::string& port, const std::string& pw) : port(port), pw(pw), host("127.0.0.1"), running(true) {
     // Init socket
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket == -1)
         throw std::runtime_error("Debug: Server.server: Failed to create socket");
-
+    init_commands();
     // Set socket options
     int val = 1;
     if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) == -1)
@@ -73,6 +73,11 @@ std::string Server::getPw() const {
     return pw;
 }
 
+void Server::init_commands(){
+    s_commands["PING"] = new PingCommand(this);
+    s_commands["PONG"] = new PongCommand(this);
+}
+
 void Server::run() {
     while (running)
         handle_events();
@@ -129,6 +134,8 @@ void Server::client_connect() {
     s_clients[fd] = new Client(fd);
 
     std::cout << "Debug: Server.client_connect: Number of Clients = " << s_clients.size() << "\n";
+    char aux[] = "001 MyNickname :Welcome to the ExampleNet IRC Network MyNickname!MyUsername@127.0.0.1\r\n";
+    send(fd, aux, strlen(aux), 0);
 }
 
 void Server::client_disconnect(int fd) {
@@ -148,7 +155,7 @@ void Server::client_disconnect(int fd) {
 }
 
 void Server::client_message(int fd) {
-    char buffer[1024] = {};
+    /*char buffer[1024] = {};
     ssize_t bytes_read = read(fd, buffer, sizeof(buffer) - 1);
 
     if (bytes_read == -1) {
@@ -167,8 +174,41 @@ void Server::client_message(int fd) {
     // Extract command from message
     std::string command = extract_command(message);
 
-    std::cout << "Debug: Server.client_message: command " << fd << ": \n" << command << std::endl;
+    std::cout << "Debug: Server.client_message: command " << fd << ": \n" << command << std::endl;*/
+    std::string message;
+    char buffer[100];
+    bzero(buffer, 100);
+
+    while (!std::strstr(buffer, "\r\n")) {
+        bzero(buffer, 100);
+
+        if (recv(fd, buffer, 100, 0) < 0) {
+            if (errno != EWOULDBLOCK)
+                throw std::runtime_error("Error while reading buffer from client.");
+        }
+        message.append(buffer);
+    }
+    Client *current_client = s_clients.at(fd);
+    std::stringstream sstream(message);
+    std::string aux;
+
+    try{
+        while (std::getline(sstream, aux)){
+            std::string name = aux.substr(0, aux.find(' '));
+            //std::vector<std::string> tokens = get everything else
+            if (name == "PING"){
+                Command *okaywork = s_commands.at("PONG");
+                okaywork->execute(current_client);
+            }
+        }
+        //Client *aux_client = s_clients.at(fd);
+    }
+    catch(const std::runtime_error & e) {
+        std::cout << "Error : " << e.what() << std::endl;
+    }
 }
+
+
 
 std::string Server::extract_command(const std::string& msg) {
     std::string command;

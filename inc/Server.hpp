@@ -19,6 +19,8 @@
 #include <functional>
 #include <cerrno>
 
+class Command;
+
 class Server {
     private:
         const std::string       port;
@@ -29,6 +31,7 @@ class Server {
         int                     epfd;
         std::map<int, Client*>  s_clients;
         // std::map<std::string, std::function<void(const std::string&)>>  command_handlers;
+        std::map<std::string, Command*> s_commands;
 
     public:
 
@@ -36,7 +39,7 @@ class Server {
         ~Server();
 
         std::string     getPw() const;
-
+        void            init_commands();
         void            run();
         void            add_to_epoll(int fd, uint32_t events);
         void            handle_events();
