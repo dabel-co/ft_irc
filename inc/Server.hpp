@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <functional>
 #include <cerrno>
+#include <vector>
 
 class Command;
 

@@ -7,7 +7,7 @@ Server::Server(const std::string& port, const std::string& pw) : port(port), pw(
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket == -1)
         throw std::runtime_error("Debug: Server.server: Failed to create socket");
-    init_commands();
+
     // Set socket options
     int val = 1;
     if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) == -1)
@@ -46,6 +46,7 @@ Server::Server(const std::string& port, const std::string& pw) : port(port), pw(
     // Add server socket to epoll
     add_to_epoll(server_socket, EPOLLIN);
 
+    init_commands();
     // Aquí hay que añadir el command handler, que es un mapa de commandos que parten de un mismo objeto
     // y del cual se extrae y ejecuta el comando que se recibe en el mensaje
 }
@@ -155,56 +156,69 @@ void Server::client_disconnect(int fd) {
 }
 
 void Server::client_message(int fd) {
-    /*char buffer[1024] = {};
-    ssize_t bytes_read = read(fd, buffer, sizeof(buffer) - 1);
-
-    if (bytes_read == -1) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) // Temporally no data available because the socket is non-blocking
-            return;
-        std::cerr << "Debug: Server.client_message: Error reading from socket " << fd << std::endl;
-        client_disconnect(fd);
-        return;
-    }
-
-    buffer[bytes_read] = '\0';
-    std::string message(buffer);
-
-    std::cout << "Debug: Server.client_message: Message from client " << fd << ": \n" << buffer << std::endl;
-
-    // Extract command from message
-    std::string command = extract_command(message);
-
-    std::cout << "Debug: Server.client_message: command " << fd << ": \n" << command << std::endl;*/
-    std::string message;
+    std::stringstream message;
     char buffer[100];
-    bzero(buffer, 100);
 
     while (!std::strstr(buffer, "\r\n")) {
-        bzero(buffer, 100);
+        memset(buffer, 0, 100);
 
-        if (recv(fd, buffer, 100, 0) < 0) {
+        int bytes_received = recv(fd, buffer, 100, 0);
+        if (bytes_received < 0) {
             if (errno != EWOULDBLOCK)
-                throw std::runtime_error("Error while reading buffer from client.");
+                throw std::runtime_error("Debug: Server.client_message: Error while reading buffer from client.");
         }
-        message.append(buffer);
+        else if (bytes_received == 0) {
+            client_disconnect(fd);
+            return;
+        }
+
+        message << buffer;
     }
+
+    std::cout << "Debug: Server.client_message: Message from client " << fd << ": \n" << message.str() << std::endl;
+
     Client *current_client = s_clients.at(fd);
-    std::stringstream sstream(message);
     std::string aux;
 
-    try{
-        while (std::getline(sstream, aux)){
-            std::string name = aux.substr(0, aux.find(' '));
-            //std::vector<std::string> tokens = get everything else
-            if (name == "PING"){
-                Command *okaywork = s_commands.at("PONG");
-                okaywork->execute(current_client);
+    while (std::getline(message, aux, '\n')) {
+
+        if (!aux.empty()  && aux[aux.length() - 1] == '\r')
+            aux.erase(aux.length() - 1);
+
+        std::size_t space_pos = aux.find(' ');
+        std::string cmd = (space_pos != std::string::npos) ? aux.substr(0, space_pos) : aux;
+
+        std::cout << "Debug: Server.client_message: Command: " << cmd << std::endl;
+        
+        // Vector to store the arguments of the cmd
+        std::vector<std::string> tokens;
+
+        if (space_pos != std::string::npos) {
+            std::string arguments = aux.substr(space_pos + 1);
+
+            std::stringstream ss(arguments);
+            std::string token;
+            while (ss >> token) {  // Extraemos cada argumento separado por espacio
+                tokens.push_back(token);  // Los añadimos al vector
             }
         }
+        
+        std::cout << "Debug: Server.client_message: Tokens: ";
+        for (std::vector<std::string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
+            std::cout << *it << " ";  // Imprimir cada token seguido de un espacio
+        std::cout << std::endl;
+}
+
+        try {
+            Command *command = s_commands.at("PONG"); // Aquí hay que cambiar el PONG por cmd cuando estén todos definicdos como objetos e inicializados
+            std::string cmd = aux.substr(0, aux.find(' '));
+            if (cmd == "PING")
+                command->execute(current_client);
+        }
+        catch(const std::runtime_error & e) {
+            std::cout << "Debug: Server.client_message: Error: " << e.what() << std::endl;
+        }
         //Client *aux_client = s_clients.at(fd);
-    }
-    catch(const std::runtime_error & e) {
-        std::cout << "Error : " << e.what() << std::endl;
     }
 }
 
