@@ -1,6 +1,3 @@
-//
-// Created by dabel-co on 12/09/24.
-//
 
 #ifndef COMMAND_H
 #define COMMAND_H
@@ -34,6 +31,38 @@ class PongCommand : public Command{
     public:
         PongCommand(Server *server) : Command(server) {}
         ~PongCommand() {}
+
+        void execute(Client *client);
+};
+
+class CatCommand : public Command{
+    public:
+        CatCommand(Server *server) : Command(server) {}
+        ~CatCommand() {}
+
+        void execute(Client *client);
+};
+
+class PassCommand : public Command{
+    public:
+        PassCommand(Server *server) : Command(server) {}
+        ~PassCommand() {}
+
+        void execute(Client *client);
+};
+
+class NickCommand : public Command{
+    public:
+        NickCommand(Server *server) : Command(server) {}
+        ~NickCommand() {}
+
+        void execute(Client *client);
+};
+
+class UserCommand : public Command{
+    public:
+        UserCommand(Server *server) : Command(server) {}
+        ~UserCommand() {}
 
         void execute(Client *client);
 };

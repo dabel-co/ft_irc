@@ -77,6 +77,11 @@ std::string Server::getPw() const {
 void Server::init_commands(){
     s_commands["PING"] = new PingCommand(this);
     s_commands["PONG"] = new PongCommand(this);
+    s_commands["CAP"] = new PongCommand(this);
+    s_commands["PASS"] = new PassCommand(this);
+    s_commands["NICK"] = new NickCommand(this);
+    s_commands["USER"] = new UserCommand(this);
+    
 }
 
 void Server::run() {
@@ -210,10 +215,10 @@ void Server::client_message(int fd) {
 }
 
         try {
-            Command *command = s_commands.at("PONG"); // Aquí hay que cambiar el PONG por cmd cuando estén todos definicdos como objetos e inicializados
-            std::string cmd = aux.substr(0, aux.find(' '));
-            if (cmd == "PING")
-                command->execute(current_client);
+            std::string cmd = aux.substr(0, aux.find(' ')); // Aquí saca el cmd
+            std::cout << "Debug: Server.client_message: cmd: " << cmd << std::endl;
+            Command *command = s_commands.at(cmd); // Aquí ya llama al comando que toca. Habrñia que ir rellenando la lista de comandos
+            command->execute(current_client);
         }
         catch(const std::runtime_error & e) {
             std::cout << "Debug: Server.client_message: Error: " << e.what() << std::endl;
@@ -221,8 +226,6 @@ void Server::client_message(int fd) {
         //Client *aux_client = s_clients.at(fd);
     }
 }
-
-
 
 std::string Server::extract_command(const std::string& msg) {
     std::string command;
