@@ -1,6 +1,3 @@
-//
-// Created by dabel-co on 12/09/24.
-//
 
 #include "../inc/Command.hpp"
 void PongCommand::execute(Client *client){
