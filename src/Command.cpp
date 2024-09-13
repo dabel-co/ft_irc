@@ -1,6 +1,3 @@
-//
-// Created by dabel-co on 12/09/24.
-//
 
 #include "../inc/Command.hpp"
 void PongCommand::execute(Client *client){
@@ -9,5 +6,21 @@ void PongCommand::execute(Client *client){
 }
 
 void PingCommand::execute(Client *client){
-    std::cout << &client << "TEST" << std::endl;
+    std::cout << &client << "------ PING cmd ------" << std::endl; // Al igual que en PONG, habría que ir añadiendo la lógica de cada comando
+}
+
+void CatCommand::execute(Client *client){
+    std::cout << &client << "------ CAT cmd ------" << std::endl;
+}
+
+void PassCommand::execute(Client *client){
+    std::cout << &client << "------ PASS cmd ------" << std::endl;
+}
+
+void NickCommand::execute(Client *client){
+    std::cout << &client << "------ NICK cmd ------" << std::endl;
+}
+
+void UserCommand::execute(Client *client){
+    std::cout << &client << "------ USER cmd ------" << std::endl;
 }
