@@ -81,6 +81,7 @@ void Server::init_commands(){
     s_commands["PASS"] = new PassCommand(this);
     s_commands["NICK"] = new NickCommand(this);
     s_commands["USER"] = new UserCommand(this);
+    s_commands["QUIT"] = new QuitCommand(this);
     
 }
 
@@ -89,7 +90,7 @@ void Server::run() {
         handle_events();
 }
 
-void Server::add_to_epoll(int fd, uint32_t events) {
+void Server::add_to_epoll(int fd, uint32_t events) const {
     epoll_event ev = {};
     ev.events = events;
     ev.data.fd = fd;
@@ -121,7 +122,7 @@ void Server::handle_events() {
 }
 
 void Server::client_connect() {
-    std::cout << "Debug: Server.client_connect: New client connection!" << std::endl;
+    //std::cout << "Debug: Server.client_connect: New client connection!" << std::endl;
 
     // Accept new connection
     sockaddr_in client_addr = {};
@@ -140,12 +141,11 @@ void Server::client_connect() {
     s_clients[fd] = new Client(fd);
 
     std::cout << "Debug: Server.client_connect: Number of Clients = " << s_clients.size() << "\n";
-    char aux[] = "001 MyNickname :Welcome to the ExampleNet IRC Network MyNickname!MyUsername@127.0.0.1\r\n";
-    send(fd, aux, strlen(aux), 0);
+
 }
 
 void Server::client_disconnect(int fd) {
-    std::cout << "Debug: Server.client_disconnect: Client client_disconnected!" << std::endl;
+    //std::cout << "Debug: Server.client_disconnect: Client client_disconnected!" << std::endl;
 
     // Remove client from epoll
     if (epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL) == -1)
@@ -159,33 +159,55 @@ void Server::client_disconnect(int fd) {
 
     std::cout << "Debug: Server.client_disconnect: Number of Clients = " << s_clients.size() << "\n";
 }
+void Server::handle_message(int fd, std::stringstream message) {
 
+}
 void Server::client_message(int fd) {
     std::stringstream message;
     char buffer[100];
-
+    bzero(buffer, 100);
     while (!std::strstr(buffer, "\r\n")) {
-        memset(buffer, 0, 100);
-
-        int bytes_received = recv(fd, buffer, 100, 0);
+        bzero(buffer, 100);
+        ssize_t bytes_received = recv(fd, buffer, 100, 0);
         if (bytes_received < 0) {
             if (errno != EWOULDBLOCK)
                 throw std::runtime_error("Debug: Server.client_message: Error while reading buffer from client.");
         }
-        else if (bytes_received == 0) {
+        if (bytes_received == 0) {
+            std::cout << "JWIERGJWOIERJGIWER THIS IS NOT GOOD" << std::endl;
             client_disconnect(fd);
             return;
         }
-
         message << buffer;
     }
-
-    std::cout << "Debug: Server.client_message: Message from client " << fd << ": \n" << message.str() << std::endl;
-
+    std::cout << "Debug: new message from " << fd << ":" << message.str() << std::endl;
+    //std::cout << "wtf = " << message << std::endl;
     Client *current_client = s_clients.at(fd);
     std::string aux;
 
-    while (std::getline(message, aux, '\n')) {
+    while (std::getline(message, aux)) {
+        std::string cmd = aux.substr(0, aux.find(' '));
+        try {
+            std::cout << "command is = " << cmd << std::endl;
+            Command *command = s_commands.at(cmd);
+            std::vector<std::string> tokens;
+            std::string buf;
+            std::stringstream ss(aux.substr(cmd.length(), aux.length()));
+            while (ss >> buf)
+                tokens.push_back(buf);
+            command->execute(current_client, tokens);
+        }
+        catch(const std::runtime_error & e) {
+            std::cout << "Debug: Server.client_message: Error: " << e.what() << std::endl;
+            break;
+        }
+        catch(const std::out_of_range & e) {
+            std::cout << "command not found " << e.what() << std::endl;
+        }
+        //Client *aux_client = s_clients.at(fd);
+    }
+/*
+    while (std::getline(message, aux)) {
 
         if (!aux.empty()  && aux[aux.length() - 1] == '\r')
             aux.erase(aux.length() - 1);
@@ -193,7 +215,7 @@ void Server::client_message(int fd) {
         std::size_t space_pos = aux.find(' ');
         std::string cmd = (space_pos != std::string::npos) ? aux.substr(0, space_pos) : aux;
 
-        std::cout << "Debug: Server.client_message: Command: " << cmd << std::endl;
+        //std::cout << "Debug: Server.client_message: Command: " << cmd << std::endl;
         
         // Vector to store the arguments of the cmd
         std::vector<std::string> tokens;
@@ -215,21 +237,18 @@ void Server::client_message(int fd) {
 }
 
         try {
+
             std::string cmd = aux.substr(0, aux.find(' ')); // Aquí saca el cmd
-            std::cout << "Debug: Server.client_message: cmd: " << cmd << std::endl;
+            //std::cout << "Debug: Server.client_message: cmd: " << cmd << std::endl;
             Command *command = s_commands.at(cmd); // Aquí ya llama al comando que toca. Habrñia que ir rellenando la lista de comandos
-            command->execute(current_client);
+            command->execute(current_client, tokens);
         }
         catch(const std::runtime_error & e) {
-            std::cout << "Debug: Server.client_message: Error: " << e.what() << std::endl;
+            std::cout << "Debugheheheh: Server.client_message: Error: " << e.what() << std::endl;
+        }
+        catch(const std::out_of_range & e) {
+            std::cout << "command not found " << e.what() << std::endl;
         }
         //Client *aux_client = s_clients.at(fd);
-    }
-}
-
-std::string Server::extract_command(const std::string& msg) {
-    std::string command;
-    std::stringstream ss(msg);
-    ss >> command;
-    return command;
+    }*/
 }

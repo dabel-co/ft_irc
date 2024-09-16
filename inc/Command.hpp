@@ -4,19 +4,23 @@
 
 #include "Server.hpp"
 #include <iostream>
+
+#define ERR_ALREADYREGISTRED(who)"462 " + who + " :You may not reregister"
+#define ERR_NEEDMOREPARAMS(who, what)	"461 " + who + " " + what + " :Not enough parameters"
+#define ERR_PASSWDMISMATCH(who)"464 " + who + " :Password incorrect"
+#define ERR_NONICKNAMEGIVEN(who)"431 " + who + " :No nickname given"
+
 class Command{
 
     protected:
         Server *server;
-        bool _authRequired;
 
     public:
-        explicit Command(Server *server, bool authRequired = true) : server(server), _authRequired(authRequired){};
+        explicit Command(Server *server) : server(server){};
         virtual ~Command(){};
 
-        bool authRequired() const { return _authRequired; };
 
-        virtual void execute(Client *client) = 0;
+        virtual void execute(Client *client, std::vector<std::string> tokens) = 0;
 };
 
 class PingCommand : public Command{
@@ -24,7 +28,7 @@ class PingCommand : public Command{
         PingCommand(Server *server) : Command(server) {}
         ~PingCommand() {}
 
-        void execute(Client *client);
+        void execute(Client *client, std::vector<std::string> tokens);
 };
 
 class PongCommand : public Command{
@@ -32,15 +36,15 @@ class PongCommand : public Command{
         PongCommand(Server *server) : Command(server) {}
         ~PongCommand() {}
 
-        void execute(Client *client);
+        void execute(Client *client, std::vector<std::string> tokens);
 };
 
-class CatCommand : public Command{
+class CapCommand : public Command{
     public:
-        CatCommand(Server *server) : Command(server) {}
-        ~CatCommand() {}
+        CapCommand(Server *server) : Command(server) {}
+        ~CapCommand() {}
 
-        void execute(Client *client);
+        void execute(Client *client, std::vector<std::string> tokens);
 };
 
 class PassCommand : public Command{
@@ -48,7 +52,7 @@ class PassCommand : public Command{
         PassCommand(Server *server) : Command(server) {}
         ~PassCommand() {}
 
-        void execute(Client *client);
+        void execute(Client *client, std::vector<std::string> tokens);
 };
 
 class NickCommand : public Command{
@@ -56,7 +60,7 @@ class NickCommand : public Command{
         NickCommand(Server *server) : Command(server) {}
         ~NickCommand() {}
 
-        void execute(Client *client);
+        void execute(Client *client, std::vector<std::string> tokens);
 };
 
 class UserCommand : public Command{
@@ -64,6 +68,14 @@ class UserCommand : public Command{
         UserCommand(Server *server) : Command(server) {}
         ~UserCommand() {}
 
-        void execute(Client *client);
+        void execute(Client *client, std::vector<std::string> tokens);
+};
+
+class QuitCommand : public Command{
+    public:
+        QuitCommand(Server *server) : Command(server) {}
+        ~QuitCommand() {}
+
+        void execute(Client *client, std::vector<std::string> tokens);
 };
 #endif //COMMAND_H
