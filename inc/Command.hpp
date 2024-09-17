@@ -5,13 +5,12 @@
 #include "Server.hpp"
 #include <iostream>
 
-#define ERR_ALREADYREGISTRED(who)"462 " + who + " :You may not reregister"
-#define ERR_NEEDMOREPARAMS(who, what)	"461 " + who + " " + what + " :Not enough parameters"
-#define ERR_PASSWDMISMATCH(who)"464 " + who + " :Password incorrect"
-#define ERR_NONICKNAMEGIVEN(who)"431 " + who + " :No nickname given"
+#define ERR_ALREADYREGISTRED(who)       "462 " + who + " :You may not reregister"
+#define ERR_NEEDMOREPARAMS(who, what)   "461 " + who + " " + what + " :Not enough parameters"
+#define ERR_PASSWDMISMATCH(who)         "464 " + who + " :Password incorrect"
+#define ERR_NONICKNAMEGIVEN(who)        "431 " + who + " :No nickname given"
 
 class Command{
-
     protected:
         Server *server;
 
@@ -78,4 +77,5 @@ class QuitCommand : public Command{
 
         void execute(Client *client, std::vector<std::string> tokens);
 };
+
 #endif //COMMAND_H

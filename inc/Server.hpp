@@ -24,17 +24,16 @@ class Command;
 
 class Server {
     private:
-        const std::string       port;
-        const std::string       pw;
-        const std::string       host;
-        bool                    running;
-        int                     server_socket;
-        int                     epfd;
-        std::map<int, Client*>  s_clients;
+        const std::string               port;
+        const std::string               pw;
+        const std::string               host;
+        bool                            running;
+        int                             server_socket;
+        int                             epfd;
+        std::map<int, Client*>          s_clients;
         std::map<std::string, Command*> s_commands;
 
     public:
-
         Server(const std::string& port, const std::string& pw);
         ~Server();
 
