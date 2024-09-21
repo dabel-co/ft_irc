@@ -8,27 +8,26 @@
 
 class Client {
 private:
-        int         fd;
-        bool        password;
-        bool        authenticated;
-        std::string username;
-        std::string nickname;
+        int         fd_;
+        bool        isAuth_;
+        std::string username_;
+        std::string nickname_;
 
 public:
         Client(int fd);
         ~Client();
 
-        int             get_fd() const;
-        std::string     get_nickname() const;
-        std::string     get_username() const;
-        void            set_nick(std::string nick);
-        void            set_username(std::string username);
+        int             GetFd() const;
+        std::string     GetNickname() const;
+        void            SetNickname(std::string nickname);
+        std::string     GetUsername() const;
+        void            SetUsername(std::string username);
 
-        void            authenticate();
-        bool            is_authenticated() const;
-        std::string     get_prefix() const;
-        void            write(const std::string &message) const;
-        void            send_prefixed_message(const std::string &reply);
+        void            Authenticate();
+        bool            IsAuth() const;
+        std::string     GetPrefix() const;
+        void            Write(const std::string &message) const;
+        void            Reply(const std::string &reply);
 };
 
 #endif //CLIENT_H

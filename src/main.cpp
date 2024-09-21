@@ -12,7 +12,7 @@ int main(int argc, char **argv)
     }
     try {
         Server server(argv[1], argv[2]);
-        server.run();
+        server.Run();
     }
     catch(const std::runtime_error & e) {
         std::cout << "Error : " << e.what() << std::endl;

@@ -2,20 +2,20 @@
 #include "../inc/Server.hpp"
 #include "../inc/Command.hpp"
 
-Server::Server(const std::string& port, const std::string& pw) : port(port), pw(pw), host("127.0.0.1"), running(true) {
+Server::Server(const std::string& port, const std::string& password) : port_(port), password_(password), host_("127.0.0.1"), running_(true) {
     // Init socket
-    server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_socket == -1)
+    server_socket_ = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_socket_ == -1)
         throw std::runtime_error("Debug: Server.server: Failed to create socket");
 
     // Set socket options
     int val = 1;
-    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) == -1)
+    if (setsockopt(server_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) == -1)
         throw std::runtime_error("Debug: Server.server: Failed to set socket options");
 
     // Convert port to uint16_t
     uint16_t hostport;
-    std::stringstream ss(port);
+    std::stringstream ss(port_);
     if (!(ss >> hostport) || hostport == 0)
         throw std::runtime_error("Debug: Server.server: Invalid port: must be between 0 and 65535");
 
@@ -27,83 +27,80 @@ Server::Server(const std::string& port, const std::string& pw) : port(port), pw(
     socket_conf.sin_addr.s_addr = INADDR_ANY; // Bind to all interfaces
 
     // Set socket to non blocking
-    if (fcntl(server_socket, F_SETFL, O_NONBLOCK) == -1)
+    if (fcntl(server_socket_, F_SETFL, O_NONBLOCK) == -1)
         throw std::runtime_error("Debug: Server.server: Failed to set socket to non blocking");
 
     // Bind socket to port
-    if (bind(server_socket, (sockaddr *)&socket_conf, sizeof(socket_conf)) == -1)
+    if (bind(server_socket_, (sockaddr *)&socket_conf, sizeof(socket_conf)) == -1)
         throw std::runtime_error("Debug: Server.server: Failed to bind socket");
 
     // Listen to incoming connections
-    if (listen(server_socket, 100) == -1)
+    if (listen(server_socket_, 100) == -1)
         throw std::runtime_error("Debug: Server.server: Failed to listen on socket");
 
     // Create epoll instance
-    epfd = epoll_create1(0);
-    if (epfd == -1)
+    epfd_ = epoll_create1(0);
+    if (epfd_ == -1)
         throw std::runtime_error("Debug: Server.run: Error creating epoll instance.");
 
     // Add server socket to epoll
-    add_to_epoll(server_socket, EPOLLIN);
+    AddEpoll(server_socket_, EPOLLIN);
 
-    init_commands();
+    InitCommands();
     // Aquí hay que añadir el command handler, que es un mapa de commandos que parten de un mismo objeto
     // y del cual se extrae y ejecuta el comando que se recibe en el mensaje
 }
 
 Server::~Server(){
     // Close server socket
-    if (server_socket != -1) {
-        close(server_socket);
+    if (server_socket_ != -1) {
+        close(server_socket_);
     }
 
     // Close epoll instance
-    if (epfd != -1) {
-        close(epfd);
+    if (epfd_ != -1) {
+        close(epfd_);
     }
 
     // Delete all clients
-    for (std::map<int, Client*>::iterator it = s_clients.begin(); it != s_clients.end(); ++it) {
+    for (std::map<int, Client*>::iterator it = clients_.begin(); it != clients_.end(); ++it) {
         delete it->second;
     }
     // Clear clients map
-    s_clients.clear();
+    clients_.clear();
 }
 
-std::string Server::getPw() const {
-    return pw;
-}
 
-void Server::init_commands(){
-    s_commands["PING"] = new PingCommand(this);
-    s_commands["PONG"] = new PongCommand(this);
-    s_commands["CAP"] = new PongCommand(this);
-    s_commands["PASS"] = new PassCommand(this);
-    s_commands["NICK"] = new NickCommand(this);
-    s_commands["USER"] = new UserCommand(this);
-    s_commands["QUIT"] = new QuitCommand(this);
+void Server::InitCommands(){
+    commands_["PING"] = new PingCommand(this);
+    commands_["PONG"] = new PongCommand(this);
+    commands_["CAP"] = new  CapCommand(this);
+    commands_["PASS"] = new PassCommand(this);
+    commands_["NICK"] = new NickCommand(this);
+    commands_["USER"] = new UserCommand(this);
+    commands_["QUIT"] = new QuitCommand(this);
     
 }
 
-void Server::run() {
-    while (running)
-        handle_events();
+void Server::Run() {
+    while (running_)
+        HandleEvents();
 }
 
-void Server::add_to_epoll(int fd, uint32_t events) const {
+void Server::AddEpoll(int fd, uint32_t events) const {
     epoll_event ev = {};
     ev.events = events;
     ev.data.fd = fd;
 
     // Add file descriptor to epoll
-    if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1)
+    if (epoll_ctl(epfd_, EPOLL_CTL_ADD, fd, &ev) == -1)
         throw std::runtime_error("Debug: Server.run: Error adding file descriptor to epoll");
 }
 
-void Server::handle_events() {
+void Server::HandleEvents() {
     // Wait for events
     epoll_event ev_fd[MAX_EVENTS];
-    int num_events = epoll_wait(epfd, ev_fd, MAX_EVENTS, -1);
+    int num_events = epoll_wait(epfd_, ev_fd, MAX_EVENTS, -1);
     if (num_events == -1) 
         throw std::runtime_error("Debug: Server.handle_events: Error while waiting on epoll.");
 
@@ -113,21 +110,21 @@ void Server::handle_events() {
         uint32_t events = ev_fd[i].events;
 
         if (events & (EPOLLRDHUP | EPOLLHUP))
-            client_disconnect(fd);
-        else if (fd == server_socket && (events & EPOLLIN))
-            client_connect();
+            ClientDisconnect(fd);
+        else if (fd == server_socket_ && (events & EPOLLIN))
+            ClientConnect();
         else if (events & EPOLLIN)
-            client_message(fd);
+            ClientMessage(fd);
     }
 }
 
-void Server::client_connect() {
+void Server::ClientConnect() {
     //std::cout << "Debug: Server.client_connect: New client connection!" << std::endl;
 
     // Accept new connection
     sockaddr_in client_addr = {};
     socklen_t s_size = sizeof(client_addr);
-    int fd = accept(server_socket, (sockaddr*)&client_addr, &s_size);
+    int fd = accept(server_socket_, (sockaddr*)&client_addr, &s_size);
     if (fd == -1)
         throw std::runtime_error("Debug: Server.client_connect: Error accepting new client.");
 
@@ -135,34 +132,32 @@ void Server::client_connect() {
     fcntl(fd, F_SETFL, O_NONBLOCK);
 
     // Add client to epoll
-    add_to_epoll(fd, EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP);
+    AddEpoll(fd, EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP);
 
     // Add client to map
-    s_clients[fd] = new Client(fd);
+    clients_[fd] = new Client(fd);
 
-    std::cout << "Debug: Server.client_connect: Number of Clients = " << s_clients.size() << "\n";
+    std::cout << "Debug: Server.client_connect: Number of Clients = " << clients_.size() << "\n";
 
 }
 
-void Server::client_disconnect(int fd) {
+void Server::ClientDisconnect(int fd) {
     //std::cout << "Debug: Server.client_disconnect: Client client_disconnected!" << std::endl;
 
     // Remove client from epoll
-    if (epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL) == -1)
+    if (epoll_ctl(epfd_, EPOLL_CTL_DEL, fd, NULL) == -1)
         throw std::runtime_error("Debug: Server.client_disconnect: Error removing client from epoll.");
 
     // Delete client object
-    delete s_clients[fd];
+    delete clients_[fd];
 
     // Remove client from map
-    s_clients.erase(fd);
+    clients_.erase(fd);
 
-    std::cout << "Debug: Server.client_disconnect: Number of Clients = " << s_clients.size() << "\n";
+    std::cout << "Debug: Server.client_disconnect: Number of Clients = " << clients_.size() << "\n";
 }
-void Server::handle_message(int fd, std::stringstream message) {
 
-}
-void Server::client_message(int fd) {
+void Server::ClientMessage(int fd) {
     std::stringstream message;
     char buffer[100];
     bzero(buffer, 100);
@@ -175,27 +170,27 @@ void Server::client_message(int fd) {
         }
         if (bytes_received == 0) {
             std::cout << "JWIERGJWOIERJGIWER THIS IS NOT GOOD" << std::endl;
-            client_disconnect(fd);
+            ClientDisconnect(fd);
             return;
         }
         message << buffer;
     }
-    std::cout << "Debug: new message from " << fd << ":" << message.str() << std::endl;
+    //std::cout << "Debug: new message from " << fd << ":" << message.str() << std::endl;
     //std::cout << "wtf = " << message << std::endl;
-    Client *current_client = s_clients.at(fd);
+    Client *current_client = clients_.at(fd);
     std::string aux;
 
     while (std::getline(message, aux)) {
         std::string cmd = aux.substr(0, aux.find(' '));
         try {
             std::cout << "command is = " << cmd << std::endl;
-            Command *command = s_commands.at(cmd);
+            Command *command = commands_.at(cmd);
             std::vector<std::string> tokens;
             std::string buf;
             std::stringstream ss(aux.substr(cmd.length(), aux.length()));
             while (ss >> buf)
                 tokens.push_back(buf);
-            command->execute(current_client, tokens);
+            command->Execute(current_client, tokens);
         }
         catch(const std::runtime_error & e) {
             std::cout << "Debug: Server.client_message: Error: " << e.what() << std::endl;
@@ -206,49 +201,12 @@ void Server::client_message(int fd) {
         }
         //Client *aux_client = s_clients.at(fd);
     }
-/*
-    while (std::getline(message, aux)) {
-
-        if (!aux.empty()  && aux[aux.length() - 1] == '\r')
-            aux.erase(aux.length() - 1);
-
-        std::size_t space_pos = aux.find(' ');
-        std::string cmd = (space_pos != std::string::npos) ? aux.substr(0, space_pos) : aux;
-
-        //std::cout << "Debug: Server.client_message: Command: " << cmd << std::endl;
-        
-        // Vector to store the arguments of the cmd
-        std::vector<std::string> tokens;
-
-        if (space_pos != std::string::npos) {
-            std::string arguments = aux.substr(space_pos + 1);
-
-            std::stringstream ss(arguments);
-            std::string token;
-            while (ss >> token) {  // Extraemos cada argumento separado por espacio
-                tokens.push_back(token);  // Los añadimos al vector
-            }
-        }
-        
-        std::cout << "Debug: Server.client_message: Tokens: ";
-        for (std::vector<std::string>::iterator it = tokens.begin(); it != tokens.end(); ++it) {
-            std::cout << *it << " ";  // Imprimir cada token seguido de un espacio
-        std::cout << std::endl;
 }
 
-        try {
-
-            std::string cmd = aux.substr(0, aux.find(' ')); // Aquí saca el cmd
-            //std::cout << "Debug: Server.client_message: cmd: " << cmd << std::endl;
-            Command *command = s_commands.at(cmd); // Aquí ya llama al comando que toca. Habrñia que ir rellenando la lista de comandos
-            command->execute(current_client, tokens);
-        }
-        catch(const std::runtime_error & e) {
-            std::cout << "Debugheheheh: Server.client_message: Error: " << e.what() << std::endl;
-        }
-        catch(const std::out_of_range & e) {
-            std::cout << "command not found " << e.what() << std::endl;
-        }
-        //Client *aux_client = s_clients.at(fd);
-    }*/
+Client*	Server::FindClient(std::string nick){
+	for (std::map<int, Client *>::iterator it = clients_.begin(); it != clients_.end(); it++) {
+		if (!nick.compare(it->second->GetNickname()))
+			return it->second;
+	}
+	return (NULL);
 }

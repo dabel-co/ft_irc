@@ -3,42 +3,42 @@
 #include <sys/socket.h>
 
 
-Client::Client(int fd) : fd(fd), authenticated(false) {
+Client::Client(int Fd) : fd_(Fd), isAuth_(false), username_("") {
   //std::cout << "Debug: Client constructor" << std::endl;
 }
 
 Client::~Client() {
   //std::cout << "Debug: Client destructor" << std::endl;
-  if (fd != -1) {
-    close(fd);
+  if (fd_ != -1) {
+    close(fd_);
   }
 }
 
-int          Client::get_fd() const { return fd; }
-std::string  Client::get_nickname() const { return nickname; }
-void         Client::set_nick(std::string nick) {this->nickname = nick; }
+int          Client::GetFd() const { return fd_; }
+std::string  Client::GetNickname() const { return nickname_; }
+void         Client::SetNickname(std::string nickname) {this->nickname_ = nickname; }
 
-std::string  Client::get_username() const { return username; }
-void         Client::set_username(std::string username) {this->username = username; }
-bool         Client::is_authenticated() const { return authenticated; }
-void         Client::authenticate() { authenticated = true; }
-
-
+std::string  Client::GetUsername() const { return username_; }
+void         Client::SetUsername(std::string username) {this->username_ = username; }
+bool         Client::IsAuth() const { return isAuth_; }
+void         Client::Authenticate() { isAuth_ = true; }
 
 
 
-/*std::string Client::getPrefix() const {
-  return nickname + (username.empty() ? "" : "!" + username) + "@127.0.0.1";
+
+
+std::string Client::GetPrefix() const {
+  return nickname_ + (username_.empty() ? "" : "!" + username_) + "@127.0.0.1";
 }
 
-void Client::write(const std::string &message) const {
+void Client::Write(const std::string &message) const {
   std::string buffer = message + "\r\n";
-  if (send(fd, buffer.c_str(), buffer.length(), 0) < 0)
+  if (send(fd_, buffer.c_str(), buffer.length(), 0) < 0)
     throw std::runtime_error("Error while sending message to client.");
 }
 
-void Client::reply(const std::string &reply) {
-  write(":" + getPrefix() + " " + reply);
-}*/
+void Client::Reply(const std::string &reply) {
+  Write(":" + GetPrefix() + " " + reply);
+}
 
 
