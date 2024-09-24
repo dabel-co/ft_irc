@@ -1,6 +1,8 @@
 
 #include "../inc/Server.hpp"
 #include "../inc/Command.hpp"
+#include "../inc/Channel.hpp"
+
 
 Server::Server(const std::string& port, const std::string& password) : port_(port), password_(password), host_("127.0.0.1"), running_(true) {
     // Init socket
@@ -72,13 +74,14 @@ Server::~Server(){
 
 
 void Server::InitCommands(){
-    commands_["PING"] = new PingCommand(this);
-    commands_["PONG"] = new PongCommand(this);
-    commands_["CAP"] = new  CapCommand(this);
-    commands_["PASS"] = new PassCommand(this);
-    commands_["NICK"] = new NickCommand(this);
-    commands_["USER"] = new UserCommand(this);
-    commands_["QUIT"] = new QuitCommand(this);
+    commands_["PING"] =     new PingCommand(this);
+    commands_["CAP"] =      new CapCommand(this);
+    commands_["PASS"] =     new PassCommand(this);
+    commands_["NICK"] =     new NickCommand(this);
+    commands_["USER"] =     new UserCommand(this);
+    commands_["QUIT"] =     new QuitCommand(this);
+    commands_["JOIN"] =     new JoinCommand(this);
+    commands_["PRIVMSG"] =  new MsgCommand(this);
     
 }
 
@@ -190,6 +193,11 @@ void Server::ClientMessage(int fd) {
             std::stringstream ss(aux.substr(cmd.length(), aux.length()));
             while (ss >> buf)
                 tokens.push_back(buf);
+            std::cout << "command is = " << cmd << " ";
+            for (long unsigned int i = 0; i < tokens.size(); i++) {
+                std::cout << tokens[i] << " ";
+            }
+            std::cout << std::endl;
             command->Execute(current_client, tokens);
         }
         catch(const std::runtime_error & e) {
@@ -203,10 +211,24 @@ void Server::ClientMessage(int fd) {
     }
 }
 
-Client*	Server::FindClient(std::string nick){
+Client*	Server::FindClient(std::string &nick){
 	for (std::map<int, Client *>::iterator it = clients_.begin(); it != clients_.end(); it++) {
-		if (!nick.compare(it->second->GetNickname()))
+		if (!nick.compare(it->second->GetNickname())) // change to =
 			return it->second;
 	}
 	return (NULL);
+}
+Channel* Server::FindChannel(std::string &name) {
+    try {
+        Channel* aux = channels_.at(name);
+        return aux;
+    }
+    catch(const std::out_of_range & e) {
+        return NULL;
+    }
+}
+
+Channel* Server::CreateChannel(std::string &name, std::string &password) {
+    channels_[name] = new Channel(name, password);
+    return channels_.at(name);
 }
