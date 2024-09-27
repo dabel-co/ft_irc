@@ -82,7 +82,7 @@ void Server::InitCommands(){
     commands_["QUIT"] =     new QuitCommand(this);
     commands_["JOIN"] =     new JoinCommand(this);
     commands_["PRIVMSG"] =  new MsgCommand(this);
-    
+    commands_["KICK"] =     new KickCommand(this);
 }
 
 void Server::Run() {
@@ -218,6 +218,7 @@ Client*	Server::FindClient(std::string &nick){
 	}
 	return (NULL);
 }
+
 Channel* Server::FindChannel(std::string &name) {
     try {
         Channel* aux = channels_.at(name);

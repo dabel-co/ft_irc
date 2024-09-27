@@ -58,6 +58,11 @@ void UserCommand::Execute(Client *client, std::vector<std::string> tokens){
 }
 
 void QuitCommand::Execute(Client *client, std::vector<std::string> tokens){
+    if (tokens.size() < 2){
+		client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "KICK"));
+        return ;
+    }
+    client->Write(RPL_QUIT(client->GetPrefix(), tokens[0]));
     server_->ClientDisconnect(client->GetFd());
 }
 
@@ -103,4 +108,25 @@ void MsgCommand::Execute(Client *client, std::vector<std::string> tokens) {
         return ;
     }
     dst->Write(RPL_PRIVMSG(client->GetPrefix(), dst->GetNickname(), message));
+}
+
+void KickCommand::Execute(Client *client, std::vector<std::string> tokens) {
+    if (tokens.size() < 2) {
+        client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "KICK"));
+        return ;
+    }
+    Channel *aux = server_->FindChannel(tokens[0]);
+    if (aux == NULL) {
+        client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
+        return ;
+    }
+    if (aux->CheckPermission(client) == false) {
+        client->Reply(ERR_CLIHASNOPRIVSNEEDED(client->GetNickname(), tokens[0]));
+    }
+    Client *dst = server_->FindClient(tokens[1]);
+    if (dst == NULL) {
+        client->Reply(ERR_NOSUCHNICK(client->GetNickname(), tokens[1]));
+        return ;
+    }
+    aux->EraseClient(dst);
 }

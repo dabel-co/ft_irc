@@ -9,14 +9,14 @@
 class Channel;
 
 class Client {
-private:
+    private:
         int         fd_;
         bool        isAuth_;
         std::string username_;
         std::string nickname_;
         Channel     *channel_;
 
-public:
+    public:
         explicit Client(int fd);
         ~Client();
 

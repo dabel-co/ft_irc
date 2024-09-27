@@ -1,6 +1,3 @@
-//
-// Created by dabel-co on 21/09/24.
-//
 
 #include "../inc/Channel.hpp"
 
@@ -37,3 +34,5 @@ void Channel::EraseClient(Client *client) {
     if (clients_.empty())
         std::cout << "Delete this channel" << std::endl;
 }
+
+

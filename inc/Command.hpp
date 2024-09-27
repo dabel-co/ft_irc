@@ -3,23 +3,25 @@
 #define COMMAND_H
 
 #include "Server.hpp"
-#define RPL_WELCOME(who)		        ("001 " + who + " :Welcome " + who + " to the ft_irc network")
-#define ERR_ALREADYREGISTRED(who)       ("462 " + who + " :You may not reregister")
-#define ERR_NEEDMOREPARAMS(who, what)   ("461 " + who + " " + what + " :Not enough parameters")
-#define ERR_PASSWDMISMATCH(who)         ("464 " + who + " :Password incorrect")
-#define ERR_NONICKNAMEGIVEN(who)        ("431 " + who + " :No nickname given")
-#define ERR_NICKNAMEINUSE(who)		    ("433 " + who + " :Nickname is already in use")
-#define ERR_TOOMANYCHANNELS(who, channel) ("405 " + who + " " + channel + " :You have joined too many channels")
-#define ERR_CHANNELISFULL(who, channel)	("471 " + who + " " + channel + " :Cannot join channel (+l)")
-#define ERR_BADCHANNELKEY(who, channel)	("475 " + who + " " + channel + " :Cannot join channel (+k)")
-#define ERR_NOSUCHCHANNEL(who, channel)	("403 " + who + " " + channel + " :No such channel")
-#define ERR_NOSUCHNICK(source, nickname) ("401 " + source + " " + nickname + " :No such nick/channel")
-#define RPL_QUIT(who, message)		    (":" + who + " QUIT :Quit: " + message)
-#define RPL_PING(who, token)			(":" + who + " PONG :" + token)
-#define RPL_NAMREPLY(who, channel, clients)	("353 " + who + " = " + channel + " :" + clients)
-#define RPL_ENDOFNAMES(who, channel) ("366 " + who + " " + channel + " :End of /NAMES list.")
+#define RPL_WELCOME(who)		                    ("001 " + who + " :Welcome " + who + " to the ft_irc network")
+#define ERR_ALREADYREGISTRED(who)                   ("462 " + who + " :You may not reregister")
+#define ERR_NEEDMOREPARAMS(who, what)               ("461 " + who + " " + what + " :Not enough parameters")
+#define ERR_PASSWDMISMATCH(who)                     ("464 " + who + " :Password incorrect")
+#define ERR_NONICKNAMEGIVEN(who)                    ("431 " + who + " :No nickname given")
+#define ERR_NICKNAMEINUSE(who)		                ("433 " + who + " :Nickname is already in use")
+#define ERR_TOOMANYCHANNELS(who, channel)           ("405 " + who + " " + channel + " :You have joined too many channels")
+#define ERR_CHANNELISFULL(who, channel)	            ("471 " + who + " " + channel + " :Cannot join channel (+l)")
+#define ERR_BADCHANNELKEY(who, channel)	            ("475 " + who + " " + channel + " :Cannot join channel (+k)")
+#define ERR_NOSUCHCHANNEL(who, channel)	            ("403 " + who + " " + channel + " :No such channel")
+#define ERR_NOSUCHNICK(source, nickname)            ("401 " + source + " " + nickname + " :No such nick/channel")
+#define RPL_QUIT(who, message)		                (":" + who + " QUIT :Quit: " + message)
+#define RPL_PING(who, token)			            (":" + who + " PONG :" + token)
+#define RPL_NAMREPLY(who, channel, clients)	        ("353 " + who + " = " + channel + " :" + clients)
+#define RPL_ENDOFNAMES(who, channel)                ("366 " + who + " " + channel + " :End of /NAMES list.")
+#define ERR_CLIHASNOPRIVSNEEDED(source, channel)    ("482 " + source + " " + channel + " :You're not channel operator")
 
-#define RPL_PRIVMSG(who, dst, message)		(":" + who + " PRIVMSG " + dst + "" + message)
+#define RPL_QUIT(source, message)					(":" + source + " QUIT :Quit: " + message)
+#define RPL_PRIVMSG(who, dst, message)		        (":" + who + " PRIVMSG " + dst + "" + message)
 class Command{
     protected:
         Server *server_;
@@ -81,19 +83,27 @@ class QuitCommand : public Command{
 };
 
 class JoinCommand : public Command{
-public:
-    explicit JoinCommand(Server *server_) : Command(server_) {}
-    ~JoinCommand() {}
+    public:
+        explicit JoinCommand(Server *server_) : Command(server_) {}
+        ~JoinCommand() {}
 
-    void Execute(Client *client, std::vector<std::string> tokens);
+        void Execute(Client *client, std::vector<std::string> tokens);
 };
 
 class MsgCommand : public Command{
-public:
-    explicit MsgCommand(Server *server_) : Command(server_) {}
-    ~MsgCommand() {}
+    public:
+        explicit MsgCommand(Server *server_) : Command(server_) {}
+        ~MsgCommand() {}
 
-    void Execute(Client *client, std::vector<std::string> tokens);
+        void Execute(Client *client, std::vector<std::string> tokens);
+};
+
+class KickCommand : public Command{
+    public:
+        explicit KickCommand(Server *sever_) : Command(server_) {};
+        ~KickCommand() {}
+
+        void Execute(Client *client, std::vector<std::string> tokens);
 };
 
 #endif //COMMAND_H
