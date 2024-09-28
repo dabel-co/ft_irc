@@ -3,6 +3,7 @@
 #define COMMAND_H
 
 #include "Server.hpp"
+
 #define RPL_WELCOME(who)		                    ("001 " + who + " :Welcome " + who + " to the ft_irc network")
 #define ERR_ALREADYREGISTRED(who)                   ("462 " + who + " :You may not reregister")
 #define ERR_NEEDMOREPARAMS(who, what)               ("461 " + who + " " + what + " :Not enough parameters")
@@ -14,15 +15,18 @@
 #define ERR_BADCHANNELKEY(who, channel)	            ("475 " + who + " " + channel + " :Cannot join channel (+k)")
 #define ERR_NOSUCHCHANNEL(who, channel)	            ("403 " + who + " " + channel + " :No such channel")
 #define ERR_NOSUCHNICK(who, nickname)               ("401 " + who + " " + nickname + " :No such nick/channel")
-#define ERR_NOTONCHANNEL(who, channel)			    ("442 " + who + " " + channel + " :You're not on that channel")
-#define RPL_QUIT(who, message)		                (":" + who + " QUIT :Quit: " + message)
-#define RPL_PING(who, token)			            (":" + who + " PONG :" + token)
 #define RPL_NAMREPLY(who, channel, clients)	        ("353 " + who + " = " + channel + " :" + clients)
 #define RPL_ENDOFNAMES(who, channel)                ("366 " + who + " " + channel + " :End of /NAMES list.")
-#define ERR_CHANOPRIVSNEEDED(who, channel)       ("482 " + who + " " + channel + " :You're not channel operator")
+#define ERR_CHANOPRIVSNEEDED(who, channel)          ("482 " + who + " " + channel + " :You're not channel operator")
+#define ERR_NOTONCHANNEL(who, channel)			    ("442 " + who + " " + channel + " :You're not on that channel")
 
-#define RPL_PRIVMSG(who, dst, message)		        (":" + who + " PRIVMSG " + dst + " :" + message)
 #define RPL_JOIN(who, channel)					    (":" + who + " JOIN :" + channel)
+#define RPL_PRIVMSG(who, dst, message)		        (":" + who + " PRIVMSG " + dst + " :" + message)
+#define RPL_PING(who, token)			            (":" + who + " PONG :" + token)
+#define RPL_KICK(who, channel, target, reason)	    (":" + who + " KICK " + channel + " " + target + " :" + message)
+#define RPL_PART(who, channel)					    (":" + who + " PART " + channel)
+#define RPL_QUIT(who, message)		                (":" + who + " QUIT :Quit: " + message)
+
 class Command{
     protected:
         Server *server_;
@@ -111,6 +115,14 @@ class ModeCommand : public Command{
     public:
         explicit ModeCommand(Server *server_) : Command(server_) {};
         ~ModeCommand() {}
+
+        void Execute(Client *client, std::vector<std::string> tokens);
+};
+
+class PartCommand : public Command{
+    public:
+        explicit PartCommand(Server *server_) : Command(server_) {};
+        ~PartCommand() {}
 
         void Execute(Client *client, std::vector<std::string> tokens);
 };

@@ -1,11 +1,11 @@
 
 #include "../inc/Channel.hpp"
-
 #include "../inc/Command.hpp"
 
 Channel::Channel(std::string name, std::string password) : name_(name), password_(password), maxClients_(0) {
   std::cout << "Channel created!" << std::endl;
 }
+
 Channel::~Channel(){
   std::cout << "Channel destroyed!" << std::endl;
 }
@@ -40,5 +40,3 @@ void Channel::EraseClient(Client *client) {
     if (clients_.empty())
         std::cout << "Delete this channel" << std::endl;
 }
-
-

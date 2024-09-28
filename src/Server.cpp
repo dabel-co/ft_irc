@@ -8,18 +8,18 @@ Server::Server(const std::string& port, const std::string& password) : port_(por
     // Init socket
     server_socket_ = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket_ == -1)
-        throw std::runtime_error("Debug: Server.server: Failed to create socket");
+        throw std::runtime_error("Error: Failed to create socket.");
 
     // Set socket options
     int val = 1;
     if (setsockopt(server_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) == -1)
-        throw std::runtime_error("Debug: Server.server: Failed to set socket options");
+        throw std::runtime_error("Error: Failed to set socket options.");
 
     // Convert port to uint16_t
     uint16_t hostport;
     std::stringstream ss(port_);
     if (!(ss >> hostport) || hostport == 0)
-        throw std::runtime_error("Debug: Server.server: Invalid port: must be between 0 and 65535");
+        throw std::runtime_error("Error: Invalid port: must be between 0 and 65535.");
 
     // Socket configuration
     sockaddr_in socket_conf = {};
@@ -30,20 +30,20 @@ Server::Server(const std::string& port, const std::string& password) : port_(por
 
     // Set socket to non blocking
     if (fcntl(server_socket_, F_SETFL, O_NONBLOCK) == -1)
-        throw std::runtime_error("Debug: Server.server: Failed to set socket to non blocking");
+        throw std::runtime_error("Error: Failed to set socket to non blocking.");
 
     // Bind socket to port
     if (bind(server_socket_, (sockaddr *)&socket_conf, sizeof(socket_conf)) == -1)
-        throw std::runtime_error("Debug: Server.server: Failed to bind socket");
+        throw std::runtime_error("Error: Failed to bind socket.");
 
     // Listen to incoming connections
     if (listen(server_socket_, 100) == -1)
-        throw std::runtime_error("Debug: Server.server: Failed to listen on socket");
+        throw std::runtime_error("Error: Failed to listen on socket.");
 
     // Create epoll instance
     epfd_ = epoll_create1(0);
     if (epfd_ == -1)
-        throw std::runtime_error("Debug: Server.run: Error creating epoll instance.");
+        throw std::runtime_error("Error: Error creating epoll instance.");
 
     // Add server socket to epoll
     AddEpoll(server_socket_, EPOLLIN);
@@ -84,6 +84,7 @@ void Server::InitCommands(){
     commands_["PRIVMSG"] =  new MsgCommand(this);
     commands_["KICK"] =     new KickCommand(this);
 	commands_["MODE"] = 	new ModeCommand(this);
+    commands_["PART"] = 	new PartCommand(this);
 }
 
 void Server::Run() {
@@ -98,7 +99,7 @@ void Server::AddEpoll(int fd, uint32_t events) const {
 
     // Add file descriptor to epoll
     if (epoll_ctl(epfd_, EPOLL_CTL_ADD, fd, &ev) == -1)
-        throw std::runtime_error("Debug: Server.run: Error adding file descriptor to epoll");
+        throw std::runtime_error("Error: failed to add file descriptor to epoll.");
 }
 
 void Server::HandleEvents() {
@@ -106,7 +107,7 @@ void Server::HandleEvents() {
     epoll_event ev_fd[MAX_EVENTS];
     int num_events = epoll_wait(epfd_, ev_fd, MAX_EVENTS, -1);
     if (num_events == -1) 
-        throw std::runtime_error("Debug: Server.handle_events: Error while waiting on epoll.");
+        throw std::runtime_error("Error: Error while waiting on epoll.");
 
     // Process events
     for (int i = 0; i < num_events; ++i) {
@@ -130,7 +131,7 @@ void Server::ClientConnect() {
     socklen_t s_size = sizeof(client_addr);
     int fd = accept(server_socket_, (sockaddr*)&client_addr, &s_size);
     if (fd == -1)
-        throw std::runtime_error("Debug: Server.client_connect: Error accepting new client.");
+        throw std::runtime_error("Error: Error accepting new client.");
 
     // Set socket to non blocking
     fcntl(fd, F_SETFL, O_NONBLOCK);
@@ -146,11 +147,15 @@ void Server::ClientConnect() {
 }
 
 void Server::ClientDisconnect(int fd) {
-    //std::cout << "Debug: Server.client_disconnect: Client client_disconnected!" << std::endl;
+    //std::cout << "Debug: Server.client_disconnect: Client disconnected!" << std::endl;
+
+    // Remove client from channel
+    if (clients_[fd]->GetChannel())
+        clients_[fd]->GetChannel()->EraseClient(clients_[fd]);
 
     // Remove client from epoll
     if (epoll_ctl(epfd_, EPOLL_CTL_DEL, fd, NULL) == -1)
-        throw std::runtime_error("Debug: Server.client_disconnect: Error removing client from epoll.");
+        throw std::runtime_error("Error: Error removing client from epoll.");
 
     // Delete client object
     delete clients_[fd];
@@ -170,7 +175,7 @@ void Server::ClientMessage(int fd) {
         ssize_t bytes_received = recv(fd, buffer, 100, 0);
         if (bytes_received < 0) {
             if (errno != EWOULDBLOCK)
-                throw std::runtime_error("Debug: Server.client_message: Error while reading buffer from client.");
+                throw std::runtime_error("Error: Error while reading buffer from client.");
         }
         if (bytes_received == 0) {
             std::cout << "JWIERGJWOIERJGIWER THIS IS NOT GOOD" << std::endl;
@@ -202,11 +207,11 @@ void Server::ClientMessage(int fd) {
             command->Execute(current_client, tokens);
         }
         catch(const std::runtime_error & e) {
-            std::cout << "Debug: Server.client_message: Error: " << e.what() << std::endl;
+            std::cout << "Error: " << e.what() << std::endl;
             break;
         }
         catch(const std::out_of_range & e) {
-            std::cout << "command not found " << e.what() << std::endl;
+            std::cout << "Error: command not found " << e.what() << std::endl;
         }
         //Client *aux_client = s_clients.at(fd);
     }

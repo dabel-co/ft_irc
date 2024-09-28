@@ -36,5 +36,4 @@ class Channel {
         void            SetOperator(Client *dst, bool mode) { clients_[dst] = mode; };
 };
 
-
 #endif //CHANNEL_H
