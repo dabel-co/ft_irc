@@ -20,7 +20,6 @@
 #define RPL_ENDOFNAMES(who, channel)                ("366 " + who + " " + channel + " :End of /NAMES list.")
 #define ERR_CLIHASNOPRIVSNEEDED(source, channel)    ("482 " + source + " " + channel + " :You're not channel operator")
 
-#define RPL_QUIT(source, message)					(":" + source + " QUIT :Quit: " + message)
 #define RPL_PRIVMSG(who, dst, message)		        (":" + who + " PRIVMSG " + dst + "" + message)
 class Command{
     protected:
