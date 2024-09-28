@@ -4,21 +4,35 @@
 
 #include <iostream>
 #include <unistd.h>
+#include <sys/socket.h>
+
+class Channel;
 
 class Client {
     private:
-        int         fd;
-        bool        authenticated;
-        std::string username;
-        std::string nickname;
+        int         fd_;
+        bool        isAuth_;
+        std::string username_;
+        std::string nickname_;
+        Channel     *channel_;
 
     public:
-        Client(int fd);
+        explicit Client(int fd);
         ~Client();
 
-        int     get_fd() const;
-        bool    is_authenticated() const;
-        void    authenticate();
+        int             GetFd() const { return fd_; };
+        std::string     GetNickname() const { return nickname_; };
+        void            SetNickname(const std::string& nickname) {this->nickname_ = nickname; };
+        std::string     GetUsername() const { return username_; };
+        void            SetUsername(const std::string& username) {this->username_ = username; };
+        Channel*        GetChannel() const {return channel_;};
+        void            SetChannel(Channel *channel) { channel_ = channel; };
+
+        void            Authenticate() { isAuth_ = true; };
+        bool            IsAuth() const { return isAuth_; };
+        std::string     GetPrefix() const;
+        void            Write(const std::string &message) const;
+        void            Reply(const std::string &reply) const;
 };
 
 #endif //CLIENT_H

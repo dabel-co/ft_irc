@@ -3,67 +3,106 @@
 #define COMMAND_H
 
 #include "Server.hpp"
-#include <iostream>
-class Command{
+#define RPL_WELCOME(who)		                    ("001 " + who + " :Welcome " + who + " to the ft_irc network")
+#define ERR_ALREADYREGISTRED(who)                   ("462 " + who + " :You may not reregister")
+#define ERR_NEEDMOREPARAMS(who, what)               ("461 " + who + " " + what + " :Not enough parameters")
+#define ERR_PASSWDMISMATCH(who)                     ("464 " + who + " :Password incorrect")
+#define ERR_NONICKNAMEGIVEN(who)                    ("431 " + who + " :No nickname given")
+#define ERR_NICKNAMEINUSE(who)		                ("433 " + who + " :Nickname is already in use")
+#define ERR_TOOMANYCHANNELS(who, channel)           ("405 " + who + " " + channel + " :You have joined too many channels")
+#define ERR_CHANNELISFULL(who, channel)	            ("471 " + who + " " + channel + " :Cannot join channel (+l)")
+#define ERR_BADCHANNELKEY(who, channel)	            ("475 " + who + " " + channel + " :Cannot join channel (+k)")
+#define ERR_NOSUCHCHANNEL(who, channel)	            ("403 " + who + " " + channel + " :No such channel")
+#define ERR_NOSUCHNICK(source, nickname)            ("401 " + source + " " + nickname + " :No such nick/channel")
+#define RPL_QUIT(who, message)		                (":" + who + " QUIT :Quit: " + message)
+#define RPL_PING(who, token)			            (":" + who + " PONG :" + token)
+#define RPL_NAMREPLY(who, channel, clients)	        ("353 " + who + " = " + channel + " :" + clients)
+#define RPL_ENDOFNAMES(who, channel)                ("366 " + who + " " + channel + " :End of /NAMES list.")
+#define ERR_CLIHASNOPRIVSNEEDED(source, channel)    ("482 " + source + " " + channel + " :You're not channel operator")
 
+#define RPL_PRIVMSG(who, dst, message)		        (":" + who + " PRIVMSG " + dst + "" + message)
+class Command{
     protected:
-        Server *server;
-        bool _authRequired;
+        Server *server_;
 
     public:
-        explicit Command(Server *server, bool authRequired = true) : server(server), _authRequired(authRequired){};
+        explicit Command(Server *server) : server_(server){};
         virtual ~Command(){};
 
-        bool authRequired() const { return _authRequired; };
 
-        virtual void execute(Client *client) = 0;
+        virtual void Execute(Client *client, std::vector<std::string> tokens) = 0;
 };
 
 class PingCommand : public Command{
     public:
-        PingCommand(Server *server) : Command(server) {}
+        explicit PingCommand(Server *server_) : Command(server_) {}
         ~PingCommand() {}
 
-        void execute(Client *client);
+        void Execute(Client *client, std::vector<std::string> tokens);
 };
 
-class PongCommand : public Command{
+class CapCommand : public Command{
     public:
-        PongCommand(Server *server) : Command(server) {}
-        ~PongCommand() {}
+        explicit CapCommand(Server *server_) : Command(server_) {}
+        ~CapCommand() {}
 
-        void execute(Client *client);
-};
-
-class CatCommand : public Command{
-    public:
-        CatCommand(Server *server) : Command(server) {}
-        ~CatCommand() {}
-
-        void execute(Client *client);
+        void Execute(Client *client, std::vector<std::string> tokens){}
 };
 
 class PassCommand : public Command{
     public:
-        PassCommand(Server *server) : Command(server) {}
+        explicit PassCommand(Server *server_) : Command(server_) {}
         ~PassCommand() {}
 
-        void execute(Client *client);
+        void Execute(Client *client, std::vector<std::string> tokens);
 };
 
 class NickCommand : public Command{
     public:
-        NickCommand(Server *server) : Command(server) {}
+        explicit NickCommand(Server *server_) : Command(server_) {}
         ~NickCommand() {}
 
-        void execute(Client *client);
+        void Execute(Client *client, std::vector<std::string> tokens);
 };
 
 class UserCommand : public Command{
     public:
-        UserCommand(Server *server) : Command(server) {}
+        explicit UserCommand(Server *server_) : Command(server_) {}
         ~UserCommand() {}
 
-        void execute(Client *client);
+        void Execute(Client *client, std::vector<std::string> tokens);
 };
+
+class QuitCommand : public Command{
+    public:
+        explicit QuitCommand(Server *server_) : Command(server_) {}
+        ~QuitCommand() {}
+
+        void Execute(Client *client, std::vector<std::string> tokens);
+};
+
+class JoinCommand : public Command{
+    public:
+        explicit JoinCommand(Server *server_) : Command(server_) {}
+        ~JoinCommand() {}
+
+        void Execute(Client *client, std::vector<std::string> tokens);
+};
+
+class MsgCommand : public Command{
+    public:
+        explicit MsgCommand(Server *server_) : Command(server_) {}
+        ~MsgCommand() {}
+
+        void Execute(Client *client, std::vector<std::string> tokens);
+};
+
+class KickCommand : public Command{
+    public:
+        explicit KickCommand(Server *sever_) : Command(server_) {};
+        ~KickCommand() {}
+
+        void Execute(Client *client, std::vector<std::string> tokens);
+};
+
 #endif //COMMAND_H
