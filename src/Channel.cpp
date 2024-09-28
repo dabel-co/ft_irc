@@ -1,15 +1,21 @@
 
 #include "../inc/Channel.hpp"
-
 #include "../inc/Command.hpp"
 
 Channel::Channel(std::string name, std::string password) : name_(name), password_(password), maxClients_(0) {
   std::cout << "Channel created!" << std::endl;
 }
+
 Channel::~Channel(){
   std::cout << "Channel destroyed!" << std::endl;
 }
 
+void	Channel::Broadcast(std::string message, Client *src){
+	for (std::map<Client *, bool>::iterator it = clients_.begin(); it != clients_.end(); it++) {
+        if (it->first != src)
+          it->first->Write(message);
+    }
+}
 void Channel::AddClient(Client *client, std::string password) {
     if (this->password_ != password) {
         client->Reply(ERR_BADCHANNELKEY(client->GetNickname(), this->name_));
@@ -34,5 +40,3 @@ void Channel::EraseClient(Client *client) {
     if (clients_.empty())
         std::cout << "Delete this channel" << std::endl;
 }
-
-

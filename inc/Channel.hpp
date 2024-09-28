@@ -18,15 +18,16 @@ class Channel {
         Channel(std::string name, std::string password);
         ~Channel();
 
+		void			Broadcast(std::string message, Client *src);
         void            AddClient(Client *client, std::string password);
         void            EraseClient(Client *client);
 
         std::string     GetPassword() const { return password_; };
-        void            SetPassword(const std::string& password) {this->password_ = password_; };
+        void            SetPassword(const std::string& password) {this->password_ = password; };
 
+        std::string     GetName() const { return name_; };
         void            SetMaxClients(const unsigned long maxClients) {this->maxClients_ = maxClients; };
         bool            CheckPermission(Client *client) { return clients_[client]; };
 };
-
 
 #endif //CHANNEL_H
