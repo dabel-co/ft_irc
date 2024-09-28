@@ -183,6 +183,9 @@ void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {
         return;
     }
 
+    if (client->GetChannel() == NULL)
+        return ;
+
     Channel *aux = server_->FindChannel(tokens[0]);
     if (aux == NULL) {
         client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
