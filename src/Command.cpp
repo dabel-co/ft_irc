@@ -34,15 +34,21 @@ void NickCommand::Execute(Client *client, std::vector<std::string> tokens){
       server_->ClientDisconnect(client->GetFd());
       throw(std::runtime_error("Tried to give NICK without being authenticated"));
     }
-    else if (tokens.empty() || (tokens.size() == 1 && tokens[0].empty()))
+    if (tokens.empty() || (tokens.size() == 1 && tokens[0].empty())) {
         client->Reply(ERR_NONICKNAMEGIVEN(client->GetNickname()));
-    else if (server_->FindClient(tokens[0]) && client->GetNickname() != tokens[0]){
+        throw(std::runtime_error("Nickname must be given"));
+    }
+    if (server_->FindClient(tokens[0]) && client->GetNickname() != tokens[0]){
 		client->Reply(ERR_NICKNAMEINUSE(client->GetNickname()));
 		server_->ClientDisconnect(client->GetFd());
         throw(std::runtime_error("Username in use"));
 	}
-    else
-		client->SetNickname(tokens[0]);
+    if (!client->GetNickname().empty()){
+        client->Write(":" + client->GetPrefix() + " NICK " + tokens[0]);
+        if (client->GetChannel())
+            client->GetChannel()->Broadcast(":" + client->GetPrefix() + " NICK " + tokens[0], client);
+       }
+    client->SetNickname(tokens[0]);
 }
 
 // User
@@ -82,12 +88,12 @@ void JoinCommand::Execute(Client *client, std::vector<std::string> tokens){
     }
     std::string name = tokens[0];
     std::string password = tokens.size() > 1 ? tokens[1] : "";
-    //server_->FindChannelChannel(name, password)->AddClient(client, password);
     Channel *aux = server_->FindChannel(name);
     if (aux == NULL) {
         aux = server_->CreateChannel(name, password);
     }
     aux->AddClient(client, password);
+    aux->Broadcast(RPL_JOIN(client->GetNickname(), aux->GetName()), client);
 }
 
 // Msg
@@ -97,15 +103,17 @@ void MsgCommand::Execute(Client *client, std::vector<std::string> tokens) {
         return ;
     }
     std::string message;
-    for (unsigned long i = 1; i < tokens.size(); i++)
-        message.append(tokens[i] + " ");
+	for (unsigned long i = 1; i < tokens.size(); i++)
+    	message.append(tokens[i] + " ");
+
+	message = message.at(0) == ':' ? message.substr(1) : message;
     if (tokens[0].at(0) == '#') {
         Channel *aux = server_->FindChannel(tokens[0]);
         if (aux == NULL) {
             client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
             return;
         }
-        std::cout << "broadcast" << std::endl;
+        aux->Broadcast(RPL_PRIVMSG(client->GetPrefix(), tokens[0], message), client);
         return;
     }
     Client *dst = server_->FindClient(tokens[0]);
@@ -113,7 +121,7 @@ void MsgCommand::Execute(Client *client, std::vector<std::string> tokens) {
         client->Reply(ERR_NOSUCHNICK(client->GetNickname(), tokens[0]));
         return ;
     }
-    dst->Write(RPL_PRIVMSG(client->GetPrefix(), dst->GetNickname(), message));
+    dst->Write(RPL_PRIVMSG(client->GetPrefix(), tokens[0], message));
 }
 
 // Kick
@@ -144,3 +152,5 @@ void KickCommand::Execute(Client *client, std::vector<std::string> tokens) {
     }
     channel->EraseClient(dst);
 }
+
+void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {}

@@ -22,6 +22,8 @@
 #define RPL_PRIVMSG(who, dst, message)		        (":" + who + " PRIVMSG " + dst + "" + message)
 #define ERR_CLIHASNOPRIVSNEEDED(source, channel)    ("482 " + source + " " + channel + " :You're not channel operator")
 
+#define RPL_PRIVMSG(who, dst, message)		        (":" + who + " PRIVMSG " + dst + " :" + message)
+#define RPL_JOIN(who, channel)					    (":" + who + " JOIN :" + channel)
 class Command{
     protected:
         Server *server_;
@@ -102,6 +104,14 @@ class KickCommand : public Command{
     public:
         explicit KickCommand(Server *server_) : Command(server_) {};
         ~KickCommand() {}
+
+        void Execute(Client *client, std::vector<std::string> tokens);
+};
+
+class ModeCommand : public Command{
+    public:
+        explicit ModeCommand(Server *server_) : Command(server_) {};
+        ~ModeCommand() {}
 
         void Execute(Client *client, std::vector<std::string> tokens);
 };

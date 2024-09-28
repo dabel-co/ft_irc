@@ -83,6 +83,7 @@ void Server::InitCommands(){
     commands_["JOIN"] =     new JoinCommand(this);
     commands_["PRIVMSG"] =  new MsgCommand(this);
     commands_["KICK"] =     new KickCommand(this);
+	commands_["MODE"] = 	new ModeCommand(this);
 }
 
 void Server::Run() {
