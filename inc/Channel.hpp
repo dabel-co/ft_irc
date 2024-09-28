@@ -28,5 +28,4 @@ class Channel {
         bool            CheckPermission(Client *client) { return clients_[client]; };
 };
 
-
 #endif //CHANNEL_H

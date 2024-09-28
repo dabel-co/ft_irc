@@ -3,6 +3,7 @@
 
 #include "../inc/Channel.hpp"
 
+// Ping
 void PingCommand::Execute(Client *client, std::vector<std::string> tokens){
     if (tokens.empty()) {
         std::cout << "PongCommand::Execute: missing arguments" << std::endl;
@@ -11,7 +12,7 @@ void PingCommand::Execute(Client *client, std::vector<std::string> tokens){
     client->Write(RPL_PING(client->GetPrefix(), tokens[0]));
 }
 
-//Password
+// Password
 void PassCommand::Execute(Client *client, std::vector<std::string> tokens){
     if (client->IsAuth())
         client->Reply(ERR_ALREADYREGISTRED(client->GetNickname()));
@@ -25,7 +26,8 @@ void PassCommand::Execute(Client *client, std::vector<std::string> tokens){
         throw(std::runtime_error("bad pass was given"));
     }
 }
-//Nick
+
+// Nick
 void NickCommand::Execute(Client *client, std::vector<std::string> tokens){
     if(!client->IsAuth()){
       client->Reply(ERR_PASSWDMISMATCH(client->GetNickname())); //maybe reply something else
@@ -42,7 +44,8 @@ void NickCommand::Execute(Client *client, std::vector<std::string> tokens){
     else
 		client->SetNickname(tokens[0]);
 }
-//User
+
+// User
 void UserCommand::Execute(Client *client, std::vector<std::string> tokens){
     if(client->GetNickname().empty()){
     	client->Reply(ERR_NONICKNAMEGIVEN(client->GetNickname()));
@@ -57,6 +60,7 @@ void UserCommand::Execute(Client *client, std::vector<std::string> tokens){
     }
 }
 
+// Quit
 void QuitCommand::Execute(Client *client, std::vector<std::string> tokens){
     if (tokens.size() < 2){
 		client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "KICK"));
@@ -66,6 +70,7 @@ void QuitCommand::Execute(Client *client, std::vector<std::string> tokens){
     server_->ClientDisconnect(client->GetFd());
 }
 
+// Join
 void JoinCommand::Execute(Client *client, std::vector<std::string> tokens){
     if (tokens.empty()) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "JOIN"));
@@ -85,6 +90,7 @@ void JoinCommand::Execute(Client *client, std::vector<std::string> tokens){
     aux->AddClient(client, password);
 }
 
+// Msg
 void MsgCommand::Execute(Client *client, std::vector<std::string> tokens) {
     if (tokens.size() < 2) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "PRIVMSG"));
@@ -110,17 +116,25 @@ void MsgCommand::Execute(Client *client, std::vector<std::string> tokens) {
     dst->Write(RPL_PRIVMSG(client->GetPrefix(), dst->GetNickname(), message));
 }
 
+// Kick
 void KickCommand::Execute(Client *client, std::vector<std::string> tokens) {
     if (tokens.size() < 2) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "KICK"));
         return ;
     }
-    Channel *aux = server_->FindChannel(tokens[0]);
-    if (aux == NULL) {
+    if (tokens.size() >= 3) {
+        std::string message = "";
+        for (unsigned long i = 2; i < tokens.size(); i++)
+            message.append(tokens[i] + " ");
+    }
+    else
+        std::string message = "Kicked without any reason";
+    Channel *channel = server_->FindChannel(tokens[0]);
+    if (channel == NULL) {
         client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
         return ;
     }
-    if (aux->CheckPermission(client) == false) {
+    if (channel->CheckPermission(client) == false) {
         client->Reply(ERR_CLIHASNOPRIVSNEEDED(client->GetNickname(), tokens[0]));
     }
     Client *dst = server_->FindClient(tokens[1]);
@@ -128,5 +142,5 @@ void KickCommand::Execute(Client *client, std::vector<std::string> tokens) {
         client->Reply(ERR_NOSUCHNICK(client->GetNickname(), tokens[1]));
         return ;
     }
-    aux->EraseClient(dst);
+    channel->EraseClient(dst);
 }

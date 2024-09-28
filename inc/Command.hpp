@@ -3,6 +3,7 @@
 #define COMMAND_H
 
 #include "Server.hpp"
+
 #define RPL_WELCOME(who)		                    ("001 " + who + " :Welcome " + who + " to the ft_irc network")
 #define ERR_ALREADYREGISTRED(who)                   ("462 " + who + " :You may not reregister")
 #define ERR_NEEDMOREPARAMS(who, what)               ("461 " + who + " " + what + " :Not enough parameters")
@@ -18,9 +19,9 @@
 #define RPL_PING(who, token)			            (":" + who + " PONG :" + token)
 #define RPL_NAMREPLY(who, channel, clients)	        ("353 " + who + " = " + channel + " :" + clients)
 #define RPL_ENDOFNAMES(who, channel)                ("366 " + who + " " + channel + " :End of /NAMES list.")
+#define RPL_PRIVMSG(who, dst, message)		        (":" + who + " PRIVMSG " + dst + "" + message)
 #define ERR_CLIHASNOPRIVSNEEDED(source, channel)    ("482 " + source + " " + channel + " :You're not channel operator")
 
-#define RPL_PRIVMSG(who, dst, message)		        (":" + who + " PRIVMSG " + dst + "" + message)
 class Command{
     protected:
         Server *server_;
@@ -99,7 +100,7 @@ class MsgCommand : public Command{
 
 class KickCommand : public Command{
     public:
-        explicit KickCommand(Server *sever_) : Command(server_) {};
+        explicit KickCommand(Server *server_) : Command(server_) {};
         ~KickCommand() {}
 
         void Execute(Client *client, std::vector<std::string> tokens);

@@ -1,6 +1,5 @@
 
 #include "../inc/Client.hpp"
-#include <sys/socket.h>
 
 
 Client::Client(int Fd) : fd_(Fd), isAuth_(false), channel_(NULL) {
