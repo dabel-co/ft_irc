@@ -177,4 +177,66 @@ void PartCommand::Execute(Client *client, std::vector<std::string> tokens) {
     client->SetChannel(NULL);
 }
 
-void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {}
+void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {
+    if (tokens.size() < 2) {
+        client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "MODE"));
+        return;
+    }
+
+    Channel *aux = server_->FindChannel(tokens[0]);
+    if (aux == NULL) {
+        client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
+        return ;
+    }
+
+    if (aux != client->GetChannel()) {
+        client->Reply(ERR_NOTONCHANNEL(client->GetNickname(), tokens[0]));
+        return ;
+    }
+
+    if (aux->CheckPermission(client) == false) {
+        client->Reply(ERR_CHANOPRIVSNEEDED(client->GetNickname(), tokens[0]));
+        return ;
+    }
+    char op = tokens[1].at(0);
+    char flag = tokens[1].at(1);
+    Client *dst = NULL;
+    switch (flag) {
+        case 'i': // invite only
+            op == '+' ? aux->SetInvite(true) : aux->SetInvite(false);
+            break;
+        case 't': //topic can change only if operator
+            op == '+' ? aux->SetTopicRestriction(true) : aux->SetTopicRestriction(false);
+            break;
+        case 'k': // password
+            if (tokens.size() != 3 || tokens[2].empty()) {
+                client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "MODE"));
+                return ;
+            }
+            op == '+' ? aux->SetPassword(tokens[2]) : aux->SetPassword("");
+            break;
+        case 'o' ://give operator
+            if (tokens.size() != 3 || tokens[2].empty()) {
+                client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "MODE"));
+                return ;
+            }
+            dst = server_->FindClient(tokens[2]);
+            if (dst == NULL || dst->GetChannel() != aux) {
+                client->Reply(ERR_NOTONCHANNEL(tokens[2], aux->GetName()));
+                return;
+            }
+            op == '+' ? aux->SetOperator(dst, true) : aux->SetOperator(dst, false);
+            break;
+        case 'l' : //user limit
+            if (tokens.size() != 3 || tokens[2].empty()) {
+                client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "MODE"));
+                return ;
+            }
+            std::cout << "lol" << std::endl;
+            break;
+        default:
+            std::cout << "lol" << std::endl;
+            break;
+    }
+
+}
