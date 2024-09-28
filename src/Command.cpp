@@ -68,10 +68,6 @@ void UserCommand::Execute(Client *client, std::vector<std::string> tokens){
 
 // Quit
 void QuitCommand::Execute(Client *client, std::vector<std::string> tokens){
-    if (tokens.size() < 2){
-		client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "KICK"));
-        return ;
-    }
     client->Write(RPL_QUIT(client->GetPrefix(), tokens[0]));
     server_->ClientDisconnect(client->GetFd());
 }
@@ -130,27 +126,55 @@ void KickCommand::Execute(Client *client, std::vector<std::string> tokens) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "KICK"));
         return ;
     }
-    if (tokens.size() >= 3) {
-        std::string message = "";
-        for (unsigned long i = 2; i < tokens.size(); i++)
-            message.append(tokens[i] + " ");
-    }
-    else
-        std::string message = "Kicked without any reason";
     Channel *channel = server_->FindChannel(tokens[0]);
     if (channel == NULL) {
         client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
         return ;
     }
     if (channel->CheckPermission(client) == false) {
-        client->Reply(ERR_CLIHASNOPRIVSNEEDED(client->GetNickname(), tokens[0]));
+        client->Reply(ERR_CHANOPRIVSNEEDED(client->GetNickname(), tokens[0]));
+        std::cout << "lol" << std::endl;
+        return ;
     }
     Client *dst = server_->FindClient(tokens[1]);
     if (dst == NULL) {
         client->Reply(ERR_NOSUCHNICK(client->GetNickname(), tokens[1]));
         return ;
     }
+    if (dst->GetChannel() != channel) {
+        dst->Reply(ERR_NOTONCHANNEL(dst->GetNickname(), tokens[0]));
+        return ;
+    }
+    std::string message = "Kicked without any reason";
+    if (tokens.size() >= 3) {
+        std::string message = "";
+        for (unsigned long i = 2; i < tokens.size(); i++)
+            message.append(tokens[i] + " ");
+    }
+    channel->Broadcast(RPL_KICK(client->GetPrefix(), channel->GetName(), dst->GetNickname(), message), client);
     channel->EraseClient(dst);
+    dst->SetChannel(NULL);
+}
+
+// Part
+void PartCommand::Execute(Client *client, std::vector<std::string> tokens) {
+    if (tokens.empty()) {
+        client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "PART"));
+        return ;
+    }
+    Channel *channel = server_->FindChannel(tokens[0]);
+    if (channel == NULL) {
+        client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
+        return ;
+    }
+    if (client->GetChannel() != channel) {
+        client->Reply(ERR_NOTONCHANNEL(client->GetNickname(), tokens[0]));
+        return ;
+    }
+    channel->Broadcast(RPL_PART(client->GetPrefix(), channel->GetName()), client);
+    client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
+    channel->EraseClient(client);
+    client->SetChannel(NULL);
 }
 
 void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {}

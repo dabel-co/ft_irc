@@ -84,6 +84,7 @@ void Server::InitCommands(){
     commands_["PRIVMSG"] =  new MsgCommand(this);
     commands_["KICK"] =     new KickCommand(this);
 	commands_["MODE"] = 	new ModeCommand(this);
+    commands_["PART"] = 	new PartCommand(this);
 }
 
 void Server::Run() {
@@ -147,6 +148,10 @@ void Server::ClientConnect() {
 
 void Server::ClientDisconnect(int fd) {
     //std::cout << "Debug: Server.client_disconnect: Client disconnected!" << std::endl;
+
+    // Remove client from channel
+    if (clients_[fd]->GetChannel())
+        clients_[fd]->GetChannel()->EraseClient(clients_[fd]);
 
     // Remove client from epoll
     if (epoll_ctl(epfd_, EPOLL_CTL_DEL, fd, NULL) == -1)
