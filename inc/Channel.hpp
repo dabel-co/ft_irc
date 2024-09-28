@@ -13,6 +13,8 @@ class Channel {
         std::string               password_;
         unsigned long             maxClients_;
         std::map<Client *, bool>  clients_; //the bool is true if the Client is an operator
+        bool                      invite;
+        bool                      topic_restriction;
 
     public:
         Channel(std::string name, std::string password);
@@ -28,6 +30,10 @@ class Channel {
         std::string     GetName() const { return name_; };
         void            SetMaxClients(const unsigned long maxClients) {this->maxClients_ = maxClients; };
         bool            CheckPermission(Client *client) { return clients_[client]; };
+
+        void            SetInvite(bool invite) { this->invite = invite; };
+        void            SetTopicRestriction(bool restrict) { this->topic_restriction = restrict; };
+        void            SetOperator(Client *dst, bool mode) { clients_[dst] = mode; };
 };
 
 
