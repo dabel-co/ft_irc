@@ -26,6 +26,7 @@
 #define RPL_KICK(who, channel, target, reason)	    (":" + who + " KICK " + channel + " " + target + " :" + message)
 #define RPL_PART(who, channel)					    (":" + who + " PART " + channel)
 #define RPL_QUIT(who, message)		                (":" + who + " QUIT :Quit: " + message)
+#define RPL_NOTOPIC(channel)		                ("331 " + channel + " :No topic is set")
 
 class Command{
     protected:
@@ -52,7 +53,7 @@ class CapCommand : public Command{
         explicit CapCommand(Server *server_) : Command(server_) {}
         ~CapCommand() {}
 
-        void Execute(Client *client, std::vector<std::string> tokens){}
+        void Execute(Client *client, std::vector<std::string> tokens);
 };
 
 class PassCommand : public Command{

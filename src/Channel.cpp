@@ -2,7 +2,7 @@
 #include "../inc/Channel.hpp"
 #include "../inc/Command.hpp"
 
-Channel::Channel(std::string name, std::string password) : name_(name), password_(password), maxClients_(0) {
+Channel::Channel(const std::string& name, const std::string& password) : name_(name), password_(password), maxClients_(0), invite_(false), topic_restriction_(false) {
   std::cout << "Channel created!" << std::endl;
 }
 
@@ -10,13 +10,13 @@ Channel::~Channel(){
   std::cout << "Channel destroyed!" << std::endl;
 }
 
-void	Channel::Broadcast(std::string message, Client *src){
-	for (std::map<Client *, bool>::iterator it = clients_.begin(); it != clients_.end(); it++) {
+void	Channel::Broadcast(const std::string& message, const Client *src){
+	for (std::map<Client *, bool>::iterator it = clients_.begin(); it != clients_.end(); ++it) {
         if (it->first != src)
           it->first->Write(message);
     }
 }
-void Channel::AddClient(Client *client, std::string password) {
+void Channel::AddClient(Client *client, const std::string& password) {
     if (this->password_ != password) {
         client->Reply(ERR_BADCHANNELKEY(client->GetNickname(), this->name_));
         return;
@@ -27,10 +27,12 @@ void Channel::AddClient(Client *client, std::string password) {
     }
     clients_.empty() ? clients_[client] = true : clients_[client] = false;
     std::string client_list;
-    for (std::map<Client *, bool>::iterator it = clients_.begin(); it != clients_.end(); it++) {
-        client_list.append(it->first->GetNickname() + " ");
+    for (std::map<Client *, bool>::iterator it = clients_.begin(); it != clients_.end(); ++it) {
+        client_list.append(" " + it->first->GetNickname());
     }
+    client_list.erase(0,1);
     client->SetChannel(this);
+    client->Reply(RPL_NOTOPIC(this->name_));
     client->Reply(RPL_NAMREPLY(client->GetNickname(), this->name_, client_list));
     client->Reply(RPL_ENDOFNAMES(client->GetNickname(), this->name_));
 }
@@ -38,5 +40,5 @@ void Channel::AddClient(Client *client, std::string password) {
 void Channel::EraseClient(Client *client) {
     clients_.erase(client);
     if (clients_.empty())
-        std::cout << "Delete this channel" << std::endl;
+        std::cout << "Delete this   channel" << std::endl;
 }

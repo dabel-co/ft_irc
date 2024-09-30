@@ -46,9 +46,9 @@ class Server {
         void            ClientConnect();
         void            ClientDisconnect(int fd);
         void            ClientMessage(int fd);
-		Client *        FindClient(std::string &nick);
-        Channel*        FindChannel(std::string &name);
-        Channel*        CreateChannel(std::string &name, std::string &password);
+		Client *        FindClient(const std::string &nick);
+        Channel*        FindChannel(const std::string &name) const;
+        Channel*        CreateChannel(const std::string &name, const std::string &password);
 };
 
 #endif //SERVER_H

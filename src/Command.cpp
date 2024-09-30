@@ -4,7 +4,7 @@
 #include "../inc/Channel.hpp"
 
 // Ping
-void PingCommand::Execute(Client *client, std::vector<std::string> tokens){
+void PingCommand::Execute(Client *client, const std::vector<std::string> tokens){
     if (tokens.empty()) {
         std::cout << "PongCommand::Execute: missing arguments" << std::endl;
         return;
@@ -13,7 +13,7 @@ void PingCommand::Execute(Client *client, std::vector<std::string> tokens){
 }
 
 // Password
-void PassCommand::Execute(Client *client, std::vector<std::string> tokens){
+void PassCommand::Execute(Client *client, const std::vector<std::string> tokens){
     if (client->IsAuth())
         client->Reply(ERR_ALREADYREGISTRED(client->GetNickname()));
     else if (tokens.size() != 1)
@@ -27,21 +27,24 @@ void PassCommand::Execute(Client *client, std::vector<std::string> tokens){
     }
 }
 
-// Nick
-void NickCommand::Execute(Client *client, std::vector<std::string> tokens){
+void CapCommand::Execute(Client *client, std::vector<std::string> tokens) {
+    client->Write("CAP * LS :");
+}
+//
+void NickCommand::Execute(Client *client, const std::vector<std::string> tokens){
     if(!client->IsAuth()){
-      client->Reply(ERR_PASSWDMISMATCH(client->GetNickname())); //maybe reply something else
+      client->Reply(ERR_PASSWDMISMATCH(client->GetNickname()));
       server_->ClientDisconnect(client->GetFd());
       throw(std::runtime_error("Tried to give NICK without being authenticated"));
     }
-    if (tokens.empty() || (tokens.size() == 1 && tokens[0].empty())) {
+    if (tokens[0].empty()) {
         client->Reply(ERR_NONICKNAMEGIVEN(client->GetNickname()));
         throw(std::runtime_error("Nickname must be given"));
     }
     if (server_->FindClient(tokens[0]) && client->GetNickname() != tokens[0]){
 		client->Reply(ERR_NICKNAMEINUSE(client->GetNickname()));
 		server_->ClientDisconnect(client->GetFd());
-        throw(std::runtime_error("Username in use"));
+        throw(std::runtime_error("Tried to change nickname to one in use"));
 	}
     if (!client->GetNickname().empty()){
         client->Write(":" + client->GetPrefix() + " NICK " + tokens[0]);
@@ -52,13 +55,13 @@ void NickCommand::Execute(Client *client, std::vector<std::string> tokens){
 }
 
 // User
-void UserCommand::Execute(Client *client, std::vector<std::string> tokens){
+void UserCommand::Execute(Client *client, const std::vector<std::string> tokens){
     if(client->GetNickname().empty()){
     	client->Reply(ERR_NONICKNAMEGIVEN(client->GetNickname()));
     	server_->ClientDisconnect(client->GetFd());
 	 	throw(std::runtime_error("Tried to give USER without a NICK in use"));
     }
-    else if (!client->GetUsername().empty())
+    if (!client->GetUsername().empty())
 		client->Reply(ERR_ALREADYREGISTRED(client->GetNickname()));
     else if (!tokens[0].empty()){
     	client->SetUsername(tokens[0]);
@@ -74,6 +77,8 @@ void QuitCommand::Execute(Client *client, std::vector<std::string> tokens){
 
 // Join
 void JoinCommand::Execute(Client *client, std::vector<std::string> tokens){
+    if (!client->IsAuth())
+        return;
     if (tokens.empty()) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "JOIN"));
         return ;
@@ -82,18 +87,18 @@ void JoinCommand::Execute(Client *client, std::vector<std::string> tokens){
         client->Reply(ERR_TOOMANYCHANNELS(client->GetNickname(), tokens[0]));
         return ;
     }
-    std::string name = tokens[0];
+    const std::string& name = tokens[0];
     std::string password = tokens.size() > 1 ? tokens[1] : "";
     Channel *aux = server_->FindChannel(name);
     if (aux == NULL) {
         aux = server_->CreateChannel(name, password);
     }
     aux->AddClient(client, password);
-    aux->Broadcast(RPL_JOIN(client->GetNickname(), aux->GetName()), client);
+    aux->Broadcast(RPL_JOIN(client->GetPrefix(), aux->GetName()), client);
 }
 
 // Msg
-void MsgCommand::Execute(Client *client, std::vector<std::string> tokens) {
+void MsgCommand::Execute(Client *client, const std::vector<std::string> tokens) {
     if (tokens.size() < 2) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "PRIVMSG"));
         return ;
@@ -121,7 +126,7 @@ void MsgCommand::Execute(Client *client, std::vector<std::string> tokens) {
 }
 
 // Kick
-void KickCommand::Execute(Client *client, std::vector<std::string> tokens) {
+void KickCommand::Execute(Client *client, const std::vector<std::string> tokens) {
     if (tokens.size() < 2) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "KICK"));
         return ;
@@ -147,7 +152,7 @@ void KickCommand::Execute(Client *client, std::vector<std::string> tokens) {
     }
     std::string message = "Kicked without any reason";
     if (tokens.size() >= 3) {
-        std::string message = "";
+        std::string message;
         for (unsigned long i = 2; i < tokens.size(); i++)
             message.append(tokens[i] + " ");
     }

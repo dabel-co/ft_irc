@@ -33,7 +33,7 @@ Server::Server(const std::string& port, const std::string& password) : port_(por
         throw std::runtime_error("Error: Failed to set socket to non blocking.");
 
     // Bind socket to port
-    if (bind(server_socket_, (sockaddr *)&socket_conf, sizeof(socket_conf)) == -1)
+    if (bind(server_socket_, reinterpret_cast<sockaddr *>(&socket_conf), sizeof(socket_conf)) == -1)
         throw std::runtime_error("Error: Failed to bind socket.");
 
     // Listen to incoming connections
@@ -108,18 +108,17 @@ void Server::HandleEvents() {
     int num_events = epoll_wait(epfd_, ev_fd, MAX_EVENTS, -1);
     if (num_events == -1) 
         throw std::runtime_error("Error: Error while waiting on epoll.");
-
-    // Process events
-    for (int i = 0; i < num_events; ++i) {
-        int fd = ev_fd[i].data.fd;
-        uint32_t events = ev_fd[i].events;
-
-        if (events & (EPOLLRDHUP | EPOLLHUP))
-            ClientDisconnect(fd);
-        else if (fd == server_socket_ && (events & EPOLLIN))
-            ClientConnect();
-        else if (events & EPOLLIN)
-            ClientMessage(fd);
+    if (num_events > 0) {
+        for (int i = 0; i < num_events; ++i) {
+            const int fd = ev_fd[i].data.fd;
+            const uint32_t events = ev_fd[i].events;
+            if (events & (EPOLLRDHUP | EPOLLHUP))
+                ClientDisconnect(fd);
+            else if (fd == server_socket_ && (events & EPOLLIN))
+                ClientConnect();
+            else if (events & EPOLLIN)
+                ClientMessage(fd);
+        }
     }
 }
 
@@ -129,7 +128,7 @@ void Server::ClientConnect() {
     // Accept new connection
     sockaddr_in client_addr = {};
     socklen_t s_size = sizeof(client_addr);
-    int fd = accept(server_socket_, (sockaddr*)&client_addr, &s_size);
+    int fd = accept(server_socket_, reinterpret_cast<sockaddr *>(&client_addr), &s_size);
     if (fd == -1)
         throw std::runtime_error("Error: Error accepting new client.");
 
@@ -167,6 +166,7 @@ void Server::ClientDisconnect(int fd) {
 }
 
 void Server::ClientMessage(int fd) {
+    std::cout << "REQUEST!"  << std::endl;
     std::stringstream message;
     char buffer[100];
     bzero(buffer, 100);
@@ -184,8 +184,6 @@ void Server::ClientMessage(int fd) {
         }
         message << buffer;
     }
-    //std::cout << "Debug: new message from " << fd << ":" << message.str() << std::endl;
-    //std::cout << "wtf = " << message << std::endl;
     Client *current_client = clients_.at(fd);
     std::string aux;
 
@@ -217,25 +215,26 @@ void Server::ClientMessage(int fd) {
     }
 }
 
-Client*	Server::FindClient(std::string &nick){
-	for (std::map<int, Client *>::iterator it = clients_.begin(); it != clients_.end(); it++) {
-		if (!nick.compare(it->second->GetNickname())) // change to =
+Client*	Server::FindClient(const std::string &nick){
+
+	for (std::map<int, Client *>::iterator it = clients_.begin(); it != clients_.end(); ++it) {
+		if (nick == it->second->GetNickname())
 			return it->second;
 	}
 	return (NULL);
 }
 
-Channel* Server::FindChannel(std::string &name) {
+Channel* Server::FindChannel(const std::string &name) const {
     try {
         Channel* aux = channels_.at(name);
         return aux;
     }
-    catch(const std::out_of_range & e) {
+    catch(const std::out_of_range &) {
         return NULL;
     }
 }
 
-Channel* Server::CreateChannel(std::string &name, std::string &password) {
+Channel* Server::CreateChannel(const std::string &name, const std::string &password) {
     channels_[name] = new Channel(name, password);
     return channels_.at(name);
 }

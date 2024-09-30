@@ -4,7 +4,6 @@
 
 #include <iostream>
 #include "Client.hpp"
-#include <vector>
 #include <map>
 
 class Channel {
@@ -13,15 +12,16 @@ class Channel {
         std::string               password_;
         unsigned long             maxClients_;
         std::map<Client *, bool>  clients_; //the bool is true if the Client is an operator
-        bool                      invite;
-        bool                      topic_restriction;
+        std::string               topic_;
+        bool                      invite_;
+        bool                      topic_restriction_;
 
     public:
-        Channel(std::string name, std::string password);
+        Channel(const std::string& name, const std::string& password);
         ~Channel();
 
-		void			Broadcast(std::string message, Client *src);
-        void            AddClient(Client *client, std::string password);
+		void			Broadcast(const std::string& message, const Client *src);
+        void            AddClient(Client *client, const std::string& password);
         void            EraseClient(Client *client);
 
         std::string     GetPassword() const { return password_; };
@@ -31,9 +31,9 @@ class Channel {
         void            SetMaxClients(const unsigned long maxClients) {this->maxClients_ = maxClients; };
         bool            CheckPermission(Client *client) { return clients_[client]; };
 
-        void            SetInvite(bool invite) { this->invite = invite; };
-        void            SetTopicRestriction(bool restrict) { this->topic_restriction = restrict; };
-        void            SetOperator(Client *dst, bool mode) { clients_[dst] = mode; };
+        void            SetInvite(const bool invite) { this->invite_ = invite; };
+        void            SetTopicRestriction(bool restrict) { this->topic_restriction_ = restrict; };
+        void            SetOperator(Client *dst, const bool mode) { clients_[dst] = mode; };
 };
 
 #endif //CHANNEL_H
