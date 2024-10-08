@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include "Client.hpp"
+#include "Server.hpp"
 #include <map>
 
 class Channel {
@@ -15,6 +16,7 @@ class Channel {
         std::string               topic_;
         bool                      invite_;
         bool                      topic_restriction_;
+        //Server              *server_;
 
     public:
         Channel(const std::string& name, const std::string& password);
@@ -22,7 +24,7 @@ class Channel {
 
 		void			Broadcast(const std::string& message, const Client *src);
         void            AddClient(Client *client, const std::string& password);
-        void            EraseClient(Client *client);
+        void            EraseClient(Client *client, std::string reason, std::string message);
 
         std::string     GetPassword() const { return password_; };
         void            SetPassword(const std::string& password) {this->password_ = password; };

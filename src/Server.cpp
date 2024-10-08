@@ -18,8 +18,9 @@ Server::Server(const std::string& port, const std::string& password) : port_(por
     // Convert port to uint16_t
     uint16_t hostport;
     std::stringstream ss(port_);
-    if (!(ss >> hostport) || hostport == 0)
-        throw std::runtime_error("Error: Invalid port: must be between 0 and 65535.");
+    ss >> hostport;
+    if (ss.fail() || !ss.eof() || (hostport < 1024))
+        throw std::runtime_error("Error: Invalid port: must be between 1024 and 65535.");
 
     // Socket configuration
     sockaddr_in socket_conf = {};
@@ -49,27 +50,31 @@ Server::Server(const std::string& port, const std::string& password) : port_(por
     AddEpoll(server_socket_, EPOLLIN);
 
     InitCommands();
-    // Aquí hay que añadir el command handler, que es un mapa de commandos que parten de un mismo objeto
-    // y del cual se extrae y ejecuta el comando que se recibe en el mensaje
 }
 
 Server::~Server(){
+    running_ = false;
     // Close server socket
-    if (server_socket_ != -1) {
+    if (server_socket_ != -1)
         close(server_socket_);
-    }
 
     // Close epoll instance
-    if (epfd_ != -1) {
+    if (epfd_ != -1)
         close(epfd_);
-    }
 
-    // Delete all clients
-    for (std::map<int, Client*>::iterator it = clients_.begin(); it != clients_.end(); ++it) {
+    // Delete Channels, Clients and Commands
+    for (std::map<std::string, Channel *>::iterator it = channels_.begin(); it != channels_.end(); ++it)
         delete it->second;
-    }
-    // Clear clients map
+    for (std::map<int, Client*>::iterator it = clients_.begin(); it != clients_.end(); ++it)
+        delete it->second;
+    for (std::map<std::string, Command*>::iterator it = commands_.begin(); it != commands_.end(); ++it)
+        delete it->second;
+
+
+    // Clear maps
+    channels_.clear();
     clients_.clear();
+    commands_.clear();
 }
 
 
@@ -92,7 +97,7 @@ void Server::Run() {
         HandleEvents();
 }
 
-void Server::AddEpoll(int fd, uint32_t events) const {
+void Server::AddEpoll(const int fd, const uint32_t events) const {
     epoll_event ev = {};
     ev.events = events;
     ev.data.fd = fd;
@@ -103,9 +108,8 @@ void Server::AddEpoll(int fd, uint32_t events) const {
 }
 
 void Server::HandleEvents() {
-    // Wait for events
     epoll_event ev_fd[MAX_EVENTS];
-    int num_events = epoll_wait(epfd_, ev_fd, MAX_EVENTS, -1);
+    const int num_events = epoll_wait(epfd_, ev_fd, MAX_EVENTS, -1);
     if (num_events == -1) 
         throw std::runtime_error("Error: Error while waiting on epoll.");
     if (num_events > 0) {
@@ -123,12 +127,9 @@ void Server::HandleEvents() {
 }
 
 void Server::ClientConnect() {
-    //std::cout << "Debug: Server.client_connect: New client connection!" << std::endl;
-
-    // Accept new connection
     sockaddr_in client_addr = {};
     socklen_t s_size = sizeof(client_addr);
-    int fd = accept(server_socket_, reinterpret_cast<sockaddr *>(&client_addr), &s_size);
+    const int fd = accept(server_socket_, reinterpret_cast<sockaddr *>(&client_addr), &s_size);
     if (fd == -1)
         throw std::runtime_error("Error: Error accepting new client.");
 
@@ -145,12 +146,11 @@ void Server::ClientConnect() {
 
 }
 
-void Server::ClientDisconnect(int fd) {
-    //std::cout << "Debug: Server.client_disconnect: Client disconnected!" << std::endl;
+void Server::ClientDisconnect(const int fd) {
 
     // Remove client from channel
     if (clients_[fd]->GetChannel())
-        clients_[fd]->GetChannel()->EraseClient(clients_[fd]);
+        clients_[fd]->GetChannel()->EraseClient(clients_[fd], "QUIT", " : connection broken");
 
     // Remove client from epoll
     if (epoll_ctl(epfd_, EPOLL_CTL_DEL, fd, NULL) == -1)
@@ -238,3 +238,5 @@ Channel* Server::CreateChannel(const std::string &name, const std::string &passw
     channels_[name] = new Channel(name, password);
     return channels_.at(name);
 }
+
+

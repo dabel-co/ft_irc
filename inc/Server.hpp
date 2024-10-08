@@ -32,7 +32,7 @@ class Server {
         int                             epfd_;
         std::map<int, Client*>          clients_;
         std::map<std::string, Command*> commands_;
-        std::map<std::string, Channel *>channels_;
+        std::map<std::string, Channel *> channels_;
 
     public:
         Server(const std::string& port, const std::string& pw);
@@ -49,6 +49,7 @@ class Server {
 		Client *        FindClient(const std::string &nick);
         Channel*        FindChannel(const std::string &name) const;
         Channel*        CreateChannel(const std::string &name, const std::string &password);
+       // void            DestroyChannel(const std::string &name)         ;
 };
 
 #endif //SERVER_H

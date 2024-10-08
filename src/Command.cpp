@@ -1,6 +1,5 @@
 
 #include "../inc/Command.hpp"
-
 #include "../inc/Channel.hpp"
 
 // Ping
@@ -26,11 +25,12 @@ void PassCommand::Execute(Client *client, const std::vector<std::string> tokens)
         throw(std::runtime_error("bad pass was given"));
     }
 }
-
+// Cap
 void CapCommand::Execute(Client *client, std::vector<std::string> tokens) {
     client->Write("CAP * LS :");
 }
-//
+
+//Nick
 void NickCommand::Execute(Client *client, const std::vector<std::string> tokens){
     if(!client->IsAuth()){
       client->Reply(ERR_PASSWDMISMATCH(client->GetNickname()));
@@ -70,8 +70,18 @@ void UserCommand::Execute(Client *client, const std::vector<std::string> tokens)
 }
 
 // Quit
-void QuitCommand::Execute(Client *client, std::vector<std::string> tokens){
-    client->Write(RPL_QUIT(client->GetPrefix(), tokens[0]));
+void QuitCommand::Execute(Client *client, const std::vector<std::string> tokens){
+    std::string message;
+    std::cout << "tokens size = " << tokens.size() << std::endl;
+    for (unsigned long i = 0; i < tokens.size(); i++)
+            message.append(" " + tokens[i]);
+    //  message.erase(0,1);
+    if (tokens[0].empty())
+        message = " Leaving";
+    if (client->GetChannel()) {
+        Channel *aux = client->GetChannel();
+        aux->EraseClient(client, "QUIT", message);
+    }
     server_->ClientDisconnect(client->GetFd());
 }
 
@@ -84,17 +94,16 @@ void JoinCommand::Execute(Client *client, std::vector<std::string> tokens){
         return ;
     }
     if (client->GetChannel() != NULL) { //check it this works
-        client->Reply(ERR_TOOMANYCHANNELS(client->GetNickname(), tokens[0]));
+            client->Reply(ERR_TOOMANYCHANNELS(client->GetNickname(), tokens[0]));
         return ;
     }
     const std::string& name = tokens[0];
-    std::string password = tokens.size() > 1 ? tokens[1] : "";
+    const std::string password = tokens.size() > 1 ? tokens[1] : "";
     Channel *aux = server_->FindChannel(name);
     if (aux == NULL) {
         aux = server_->CreateChannel(name, password);
     }
     aux->AddClient(client, password);
-    aux->Broadcast(RPL_JOIN(client->GetPrefix(), aux->GetName()), client);
 }
 
 // Msg
@@ -110,7 +119,7 @@ void MsgCommand::Execute(Client *client, const std::vector<std::string> tokens) 
 	message = message.at(0) == ':' ? message.substr(1) : message;
     if (tokens[0].at(0) == '#') {
         Channel *aux = server_->FindChannel(tokens[0]);
-        if (aux == NULL) {
+        if (aux == NULL || client->GetChannel() == NULL) {
             client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
             return;
         }
@@ -157,7 +166,7 @@ void KickCommand::Execute(Client *client, const std::vector<std::string> tokens)
             message.append(tokens[i] + " ");
     }
     channel->Broadcast(RPL_KICK(client->GetPrefix(), channel->GetName(), dst->GetNickname(), message), client);
-    channel->EraseClient(dst);
+    //channel->EraseClient(dst, "PART"); //change to kick
     dst->SetChannel(NULL);
 }
 
@@ -176,10 +185,11 @@ void PartCommand::Execute(Client *client, std::vector<std::string> tokens) {
         client->Reply(ERR_NOTONCHANNEL(client->GetNickname(), tokens[0]));
         return ;
     }
-    channel->Broadcast(RPL_PART(client->GetPrefix(), channel->GetName()), client);
-    client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
-    channel->EraseClient(client);
-    client->SetChannel(NULL);
+    std::string message;
+    for (unsigned long i = 1; i < tokens.size(); i++)
+        message.append(" " + tokens[i]);
+    std::cout << "Part message is = " << message << std::endl;
+    channel->EraseClient(client, "PART", message);
 }
 
 void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {

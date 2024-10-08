@@ -24,8 +24,8 @@
 #define RPL_PRIVMSG(who, dst, message)		        (":" + who + " PRIVMSG " + dst + " :" + message)
 #define RPL_PING(who, token)			            (":" + who + " PONG :" + token)
 #define RPL_KICK(who, channel, target, reason)	    (":" + who + " KICK " + channel + " " + target + " :" + message)
-#define RPL_PART(who, channel)					    (":" + who + " PART " + channel)
-#define RPL_QUIT(who, message)		                (":" + who + " QUIT :Quit: " + message)
+#define RPL_PART(who, channel, reason)				(":" + who + " PART " + channel + reason)
+#define RPL_QUIT(who, message)		        (":" + who + " QUIT " + message)
 #define RPL_NOTOPIC(channel)		                ("331 " + channel + " :No topic is set")
 
 class Command{
