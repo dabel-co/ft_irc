@@ -47,7 +47,8 @@ void Channel::EraseClient(Client *client, std::string reason, std::string messag
         Broadcast(RPL_QUIT(client->GetPrefix(), message), NULL);
     else if (reason == "PART")
         Broadcast(RPL_PART(client->GetPrefix(), this->name_, message), NULL);
-    //else if (reason == "KICK")
+    else
+        Broadcast(RPL_KICK(reason, this->name_, client->GetNickname(), message), NULL);
     client->SetChannel(NULL);
     clients_.erase(client);
     if (clients_.empty()) {

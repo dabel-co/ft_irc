@@ -159,15 +159,10 @@ void KickCommand::Execute(Client *client, const std::vector<std::string> tokens)
         dst->Reply(ERR_NOTONCHANNEL(dst->GetNickname(), tokens[0]));
         return ;
     }
-    std::string message = "Kicked without any reason";
-    if (tokens.size() >= 3) {
-        std::string message;
-        for (unsigned long i = 2; i < tokens.size(); i++)
-            message.append(tokens[i] + " ");
-    }
-    channel->Broadcast(RPL_KICK(client->GetPrefix(), channel->GetName(), dst->GetNickname(), message), client);
-    //channel->EraseClient(dst, "PART"); //change to kick
-    dst->SetChannel(NULL);
+    std::string message;
+    for (unsigned long i = 2; i < tokens.size(); i++)
+        message.append(" " + tokens[i]);
+    channel->EraseClient(dst, client->GetPrefix(), message);
 }
 
 // Part
@@ -181,7 +176,7 @@ void PartCommand::Execute(Client *client, std::vector<std::string> tokens) {
         client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
         return ;
     }
-    if (client->GetChannel() != channel) {
+    if (client->GetChannel() != channel) {          
         client->Reply(ERR_NOTONCHANNEL(client->GetNickname(), tokens[0]));
         return ;
     }

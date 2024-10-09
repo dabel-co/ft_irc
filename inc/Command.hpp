@@ -4,7 +4,6 @@
 
 #include "Server.hpp"
 
-#define RPL_WELCOME(who)		                    ("001 " + who + " :Welcome " + who + " to the ft_irc network")
 #define ERR_ALREADYREGISTRED(who)                   ("462 " + who + " :You may not reregister")
 #define ERR_NEEDMOREPARAMS(who, what)               ("461 " + who + " " + what + " :Not enough parameters")
 #define ERR_PASSWDMISMATCH(who)                     ("464 " + who + " :Password incorrect")
@@ -23,10 +22,12 @@
 #define RPL_JOIN(who, channel)					    (":" + who + " JOIN :" + channel)
 #define RPL_PRIVMSG(who, dst, message)		        (":" + who + " PRIVMSG " + dst + " :" + message)
 #define RPL_PING(who, token)			            (":" + who + " PONG :" + token)
-#define RPL_KICK(who, channel, target, reason)	    (":" + who + " KICK " + channel + " " + target + " :" + message)
+//#define RPL_KICK(who, channel, target, reason)	    (":" + who + " KICK " + channel + " " + target + " :" + message)
+#define RPL_KICK(who, channel, target, reason)	    (":" + who + " KICK " + channel + " " + target + message)
 #define RPL_PART(who, channel, reason)				(":" + who + " PART " + channel + reason)
-#define RPL_QUIT(who, message)		        (":" + who + " QUIT " + message)
+#define RPL_QUIT(who, message)		                (":" + who + " QUIT " + message)
 #define RPL_NOTOPIC(channel)		                ("331 " + channel + " :No topic is set")
+#define RPL_WELCOME(who)		                    ("001 " + who + " :Welcome " + who + " to the ft_irc network")
 
 class Command{
     protected:
