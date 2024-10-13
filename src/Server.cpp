@@ -90,6 +90,8 @@ void Server::InitCommands(){
     commands_["KICK"] =     new KickCommand(this);
 	commands_["MODE"] = 	new ModeCommand(this);
     commands_["PART"] = 	new PartCommand(this);
+    commands_["TOPIC"] = 	new TopicCommand(this);
+    commands_["INVITE"] = 	new InviteCommand(this);
 }
 
 void Server::Run() {

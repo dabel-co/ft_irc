@@ -145,6 +145,10 @@ void KickCommand::Execute(Client *client, const std::vector<std::string> tokens)
         client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
         return ;
     }
+    if (client->GetChannel() != channel) {
+        client->Reply(ERR_NOTONCHANNEL(client->GetNickname(), tokens[0]));
+        return ;
+    }
     if (channel->CheckPermission(client) == false) {
         client->Reply(ERR_CHANOPRIVSNEEDED(client->GetNickname(), tokens[0]));
         std::cout << "lol" << std::endl;
@@ -188,13 +192,15 @@ void PartCommand::Execute(Client *client, std::vector<std::string> tokens) {
 }
 
 void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {
-    if (tokens.size() < 2) {
+    if (tokens.size() < 2 || tokens[1].size() < 2) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "MODE"));
         return;
     }
 
-    if (client->GetChannel() == NULL)
+    if (client->GetChannel() == NULL) {
+        client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
         return ;
+    }
 
     Channel *aux = server_->FindChannel(tokens[0]);
     if (aux == NULL) {
@@ -214,6 +220,7 @@ void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {
     char op = tokens[1].at(0);
     char flag = tokens[1].at(1);
     Client *dst = NULL;
+    std::cout << "Token size = " << tokens.size() << std::endl;
     switch (flag) {
         case 'i': // invite only
             op == '+' ? aux->SetInvite(true) : aux->SetInvite(false);
@@ -222,7 +229,7 @@ void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {
             op == '+' ? aux->SetTopicRestriction(true) : aux->SetTopicRestriction(false);
             break;
         case 'k': // password
-            if (tokens.size() != 3 || tokens[2].empty()) {
+            if (op == '+' && (tokens.size() != 3 || tokens[2].empty())) {
                 client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "MODE"));
                 return ;
             }
@@ -235,21 +242,76 @@ void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {
             }
             dst = server_->FindClient(tokens[2]);
             if (dst == NULL || dst->GetChannel() != aux) {
-                client->Reply(ERR_NOTONCHANNEL(tokens[2], aux->GetName()));
+                client->Reply(ERR_NOTONCHANNEL(tokens[2], aux->GetName())); //changies
                 return;
             }
             op == '+' ? aux->SetOperator(dst, true) : aux->SetOperator(dst, false);
             break;
-        case 'l' : //user limit
-            if (tokens.size() != 3 || tokens[2].empty()) {
+        case 'l' : { //user limit
+            if (op == '-')
+                aux->SetMaxClients(0);
+            else if (op == '+' && (tokens.size() != 3 || tokens[2].empty()))
                 client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "MODE"));
-                return ;
+            else {
+            int limit;
+            std::stringstream ss(tokens[2]);
+            ss >> limit;
+            if (ss.fail() || !ss.eof() || (limit > 100) || limit < 0)
+                client->Reply(ERR_UNKNOWNMODE(client->GetNickname(), "Invalid value"));
+            else
+                aux->SetMaxClients(limit);
             }
-            std::cout << "lol" << std::endl;
             break;
+        }
         default:
-            std::cout << "lol" << std::endl;
+            client->Reply(ERR_UNKNOWNMODE(client->GetNickname(), flag + " :Unknown flag"));
             break;
     }
+}
 
+//topic
+void TopicCommand::Execute(Client *client, const std::vector<std::string> tokens) {
+    if (tokens.size() < 3) {
+        client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "TOPIC"));
+        return ;
+    }
+    Channel *channel = server_->FindChannel(tokens[0]);
+    if (channel == NULL)
+        client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
+    else if (client->GetChannel() != channel)
+        client->Reply(ERR_NOTONCHANNEL(client->GetNickname(), tokens[0]));
+    else if (channel->GetTopicRestriction() == true && channel->CheckPermission(client) == false)
+        client->Reply(ERR_CHANOPRIVSNEEDED(client->GetNickname(), tokens[0]));
+    else {
+        std::string message;
+        for (unsigned long i = 1; i < tokens.size(); i++)
+            message.append(" " + tokens[i]);
+        message = message.at(0) == ' ' ? message.substr(1) : message;
+        message = message.at(0) == ':' ? message.substr(1) : message;
+        channel->SetTopic(message);
+        channel->Broadcast("TOPIC " + channel->GetName() + " :" + message, NULL);
+    }
+}
+
+void InviteCommand::Execute(Client *client, const std::vector<std::string> tokens) {
+    if (tokens.size() != 2) {
+        client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "TOPIC"));
+        return ;
+    }
+    Channel *channel = server_->FindChannel(tokens[0]);
+    Client *dst = server_->FindClient(tokens[1]);
+    if (channel == NULL)
+        client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
+    else if (client->GetChannel() != channel)
+        client->Reply(ERR_NOTONCHANNEL(client->GetNickname(), tokens[0]));
+    else if (channel->CheckPermission(client) == false)
+        client->Reply(ERR_CHANOPRIVSNEEDED(client->GetNickname(), tokens[0]));
+    else if (dst == NULL)
+        client->Reply(ERR_NOSUCHNICK(client->GetNickname(), tokens[1]));
+    else if (dst->GetChannel() == channel)
+        dst->Reply(ERR_USERONCHANNEL(dst->GetNickname(), tokens[1]));
+    else {
+        channel->AddInvite(dst->GetNickname());
+        client->Reply(RPL_INVITING(channel->GetName(), dst->GetNickname()));
+    }
 }

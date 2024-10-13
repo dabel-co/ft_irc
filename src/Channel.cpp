@@ -2,7 +2,7 @@
 #include "../inc/Channel.hpp"
 #include "../inc/Command.hpp"
 
-Channel::Channel(const std::string& name, const std::string& password) : name_(name), password_(password), maxClients_(0), invite_(false), topic_restriction_(false) {
+Channel::Channel(const std::string& name, const std::string& password) : name_(name), password_(password), maxClients_(0), invite_(false), topic_restriction_(true) {
   std::cout << "Channel created!" << std::endl;
 }
 
@@ -28,6 +28,10 @@ void Channel::AddClient(Client *client, const std::string& password) {
         client->Reply(ERR_CHANNELISFULL(client->GetNickname(), this->name_));
         return;
     }
+    if (invite_ == true && std::find(invite_list_.begin(), invite_list_.end(), client->GetNickname()) == invite_list_.end()) {
+        client->Reply(ERR_INVITEONLYCHAN(name_));
+        return;
+    }
     clients_.empty() ? clients_[client] = true : clients_[client] = false;
     std::string client_list;
     for (std::map<Client *, bool>::iterator it = clients_.begin(); it != clients_.end(); ++it) {
@@ -36,7 +40,10 @@ void Channel::AddClient(Client *client, const std::string& password) {
     client_list.erase(0,1);
     client->SetChannel(this);
     client->Reply("JOIN :" + this->name_);
-    client->Reply(RPL_NOTOPIC(this->name_));
+    if (topic_.empty())
+        client->Reply(RPL_NOTOPIC(this->name_));
+    else
+        client->Reply(RPL_TOPIC(this->name_, topic_));
     client->Reply(RPL_NAMREPLY(client->GetNickname(), this->name_, client_list));
     client->Reply(RPL_ENDOFNAMES(client->GetNickname(), this->name_));
     Broadcast(RPL_JOIN(client->GetPrefix(), this->name_), client);
