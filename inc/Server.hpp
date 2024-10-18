@@ -24,15 +24,15 @@ class Command;
 
 class Server {
     private:
-        const std::string               port_;
-        const std::string               password_;
-        const std::string               host_;
-        bool                            running_;
-        int                             server_socket_;
-        int                             epfd_;
-        std::map<int, Client*>          clients_;
-        std::map<std::string, Command*> commands_;
-        std::map<std::string, Channel *> channels_;
+        const std::string                   port_;
+        const std::string                   password_;
+        const std::string                   host_;
+        bool                                running_;
+        int                                 server_socket_;
+        int                                 epfd_;
+        std::map<int, Client*>              clients_;
+        std::map<std::string, Command*>     commands_;
+        std::map<std::string, Channel *>    channels_;
 
     public:
         Server(const std::string& port, const std::string& pw);
@@ -49,7 +49,6 @@ class Server {
 		Client *        FindClient(const std::string &nick);
         Channel*        FindChannel(const std::string &name) const;
         Channel*        CreateChannel(const std::string &name, const std::string &password);
-       // void            DestroyChannel(const std::string &name)         ;
 };
 
 #endif //SERVER_H

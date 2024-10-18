@@ -2,24 +2,19 @@
 #include "../inc/Channel.hpp"
 #include "../inc/Command.hpp"
 
-Channel::Channel(const std::string& name, const std::string& password) : name_(name), password_(password), maxClients_(0), invite_(false), topic_restriction_(true) {
-  //std::cout << "Channel created!" << std::endl;
-}
+Channel::Channel(const std::string& name, const std::string& password) : name_(name), password_(password), maxClients_(0), invite_(false), topic_restriction_(true) {}
 
 Channel::~Channel(){
-    //std::cout << "Channel destroyed!" << std::endl;
     clients_.clear();
-    //server_->DestroyChannel(this->name_);
-    //std::cout << "Channel destroyed!" << std::endl;
 }
 
-void	Channel::Broadcast(const std::string& message, const Client *src){
+void    Channel::Broadcast(const std::string& message, const Client *src){
 	for (std::map<Client *, bool>::iterator it = clients_.begin(); it != clients_.end(); ++it) {
         if (it->first != src || src == NULL)
           it->first->Write(message);
     }
 }
-void Channel::AddClient(Client *client, const std::string& password) {
+void    Channel::AddClient(Client *client, const std::string& password) {
     if (this->password_ != password) {
         client->Reply(ERR_BADCHANNELKEY(client->GetNickname(), this->name_));
         return;
@@ -49,7 +44,7 @@ void Channel::AddClient(Client *client, const std::string& password) {
     Broadcast(RPL_JOIN(client->GetPrefix(), this->name_), client);
 }
 
-void Channel::EraseClient(Client *client, std::string reason, std::string message) {
+void    Channel::EraseClient(Client *client, std::string reason, std::string message) {
     if (reason == "QUIT")
         Broadcast(RPL_QUIT(client->GetPrefix(), message), NULL);
     else if (reason == "PART")
@@ -65,5 +60,4 @@ void Channel::EraseClient(Client *client, std::string reason, std::string messag
         this->invite_ = false;
         this->topic_restriction_ = false;
     }
-        //server_->DestroyChannel(this->name_);
 }

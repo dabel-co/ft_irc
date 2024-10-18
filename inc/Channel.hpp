@@ -43,7 +43,7 @@ class Channel {
 
         void            SetOperator(Client *dst, const bool mode) {
             std::cout << "Client " << dst << " is now = " << mode << std::endl;
-            clients_[dst] = mode; //hmmm....
+            clients_[dst] = mode;
         };
         void            AddInvite(std::string client) {
             invite_list_.push_back(client);
