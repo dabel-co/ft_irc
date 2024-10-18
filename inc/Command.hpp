@@ -19,7 +19,7 @@
 #define ERR_CHANOPRIVSNEEDED(who, channel)          ("482 " + who + " " + channel + " :You're not channel operator")
 #define ERR_NOTONCHANNEL(who, channel)			    ("442 " + who + " " + channel + " :You're not on that channel")
 #define ERR_UNKNOWNMODE(who, what)					("472 " + who + " :" + what)
-#define ERR_USERONCHANNEL(who, channel)             ("443" + who + " " + channel + " :is already on channel")
+#define ERR_USERONCHANNEL(who, channel)             ("443 " + who + " " + channel + " :is already on channel")
 #define ERR_INVITEONLYCHAN(channel)                 ("473 " + channel + " :Cannot join channel (+i)")
 #define RPL_JOIN(who, channel)					    (":" + who + " JOIN :" + channel)
 #define RPL_PRIVMSG(who, dst, message)		        (":" + who + " PRIVMSG " + dst + " :" + message)

@@ -3,11 +3,11 @@
 #include "../inc/Command.hpp"
 
 Channel::Channel(const std::string& name, const std::string& password) : name_(name), password_(password), maxClients_(0), invite_(false), topic_restriction_(true) {
-  std::cout << "Channel created!" << std::endl;
+  //std::cout << "Channel created!" << std::endl;
 }
 
 Channel::~Channel(){
-    std::cout << "Channel destroyed!" << std::endl;
+    //std::cout << "Channel destroyed!" << std::endl;
     clients_.clear();
     //server_->DestroyChannel(this->name_);
     //std::cout << "Channel destroyed!" << std::endl;

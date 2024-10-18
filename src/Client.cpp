@@ -6,7 +6,7 @@ std::string Client::GetPrefix() const {
 }
 
 void Client::Write(const std::string &message) const {
-  std::cout << "Debug Write = " << message << std::endl;
+  //std::cout << "Debug Write = " << message << std::endl;
   const std::string buffer = message + "\r\n";
   if (send(fd_, buffer.c_str(), buffer.length(), 0) < 0)
     throw std::runtime_error("Error while sending message to client.");

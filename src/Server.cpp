@@ -168,7 +168,7 @@ void Server::ClientDisconnect(const int fd) {
 }
 
 void Server::ClientMessage(int fd) {
-    std::cout << "REQUEST!"  << std::endl;
+    //std::cout << "REQUEST!"  << std::endl;
     std::stringstream message;
     char buffer[100];
     bzero(buffer, 100);
@@ -192,28 +192,23 @@ void Server::ClientMessage(int fd) {
     while (std::getline(message, aux)) {
         std::string cmd = aux.substr(0, aux.find(' '));
         try {
-            std::cout << "command is = " << cmd << std::endl;
+            //std::cout << "command is = " << cmd << std::endl;
             Command *command = commands_.at(cmd);
             std::vector<std::string> tokens;
             std::string buf;
             std::stringstream ss(aux.substr(cmd.length(), aux.length()));
             while (ss >> buf)
                 tokens.push_back(buf);
-            std::cout << "command is = " << cmd << " ";
-            for (long unsigned int i = 0; i < tokens.size(); i++) {
-                std::cout << tokens[i] << " ";
-            }
-            std::cout << std::endl;
+
             command->Execute(current_client, tokens);
         }
         catch(const std::runtime_error & e) {
-            std::cout << "Error: " << e.what() << std::endl;
+            //std::cout << "Error: " << e.what() << std::endl;
             break;
         }
         catch(const std::out_of_range & e) {
-            std::cout << "Error: command not found " << e.what() << std::endl;
+            //std::cout << "Error: command not found " << e.what() << std::endl;
         }
-        //Client *aux_client = s_clients.at(fd);
     }
 }
 

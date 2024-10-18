@@ -27,7 +27,9 @@ void PassCommand::Execute(Client *client, const std::vector<std::string> tokens)
 }
 // Cap
 void CapCommand::Execute(Client *client, std::vector<std::string> tokens) {
-    client->Write("CAP * LS :");
+    //client->Write("CAP * LS :");
+   if (client)
+       tokens[0].empty();
 }
 
 //Nick
@@ -151,7 +153,7 @@ void KickCommand::Execute(Client *client, const std::vector<std::string> tokens)
     }
     if (channel->CheckPermission(client) == false) {
         client->Reply(ERR_CHANOPRIVSNEEDED(client->GetNickname(), tokens[0]));
-        std::cout << "lol" << std::endl;
+        //std::cout << "lol" << std::endl;
         return ;
     }
     Client *dst = server_->FindClient(tokens[1]);
@@ -187,7 +189,7 @@ void PartCommand::Execute(Client *client, std::vector<std::string> tokens) {
     std::string message;
     for (unsigned long i = 1; i < tokens.size(); i++)
         message.append(" " + tokens[i]);
-    std::cout << "Part message is = " << message << std::endl;
+    //std::cout << "Part message is = " << message << std::endl;
     channel->EraseClient(client, "PART", message);
 }
 
@@ -196,7 +198,9 @@ void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "MODE"));
         return;
     }
-
+    if (tokens[0].at(0) != '#') {
+      return ;
+    }
     if (client->GetChannel() == NULL) {
         client->Reply(ERR_NOSUCHCHANNEL(client->GetNickname(), tokens[0]));
         return ;
@@ -220,7 +224,7 @@ void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {
     char op = tokens[1].at(0);
     char flag = tokens[1].at(1);
     Client *dst = NULL;
-    std::cout << "Token size = " << tokens.size() << std::endl;
+    //std::cout << "Token size = " << tokens.size() << std::endl;
     switch (flag) {
         case 'i': // invite only
             op == '+' ? aux->SetInvite(true) : aux->SetInvite(false);
@@ -284,7 +288,7 @@ void TopicCommand::Execute(Client *client, const std::vector<std::string> tokens
         client->Reply(ERR_CHANOPRIVSNEEDED(client->GetNickname(), tokens[0]));
     else {
         std::string message;
-        for (unsigned long i = 1; i < tokens.size(); i++)
+        for (unsigned long i = 2; i < tokens.size(); i++)
             message.append(" " + tokens[i]);
         message = message.at(0) == ' ' ? message.substr(1) : message;
         message = message.at(0) == ':' ? message.substr(1) : message;
