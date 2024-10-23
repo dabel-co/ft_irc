@@ -4,36 +4,34 @@
 
 // Ping
 void PingCommand::Execute(Client *client, const std::vector<std::string> tokens){
-    if (tokens.empty()) {
-        std::cout << "PongCommand::Execute: missing arguments" << std::endl;
-        return;
-    }
-    client->Write(RPL_PING(client->GetPrefix(), tokens[0]));
+    if (!tokens.empty())
+        client->Write(RPL_PING(client->GetPrefix(), tokens[0]));
 }
 
 // Password
 void PassCommand::Execute(Client *client, const std::vector<std::string> tokens){
     if (client->IsAuth())
         client->Reply(ERR_ALREADYREGISTRED(client->GetNickname()));
-    else if (tokens.size() != 1)
+    else if (tokens.empty())
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "PASS"));
     else if (tokens[0] == server_->getPw())
         client->Authenticate();
     else {
-        client->Reply(ERR_PASSWDMISMATCH(client->GetNickname()));
+        client->Reply("464  :Password incorrect");
         server_->ClientDisconnect(client->GetFd());
-        throw(std::runtime_error("bad pass was given"));
+        throw(std::runtime_error("Wrong password"));
     }
 }
 // Cap
-void CapCommand::Execute(Client *client, std::vector<std::string> tokens) {
-    client->Write("CAP * LS :");
+void CapCommand::Execute(Client *client, const std::vector<std::string> tokens) {
+    if ( !tokens.empty() && tokens[0] != "END")
+        client->Write("CAP * LS :");
 }
 
 //Nick
 void NickCommand::Execute(Client *client, const std::vector<std::string> tokens){
     if(!client->IsAuth()){
-      client->Reply(ERR_PASSWDMISMATCH(client->GetNickname()));
+      client->Reply("464  :Password incorrect");
       server_->ClientDisconnect(client->GetFd());
       throw(std::runtime_error("Tried to give NICK without being authenticated"));
     }

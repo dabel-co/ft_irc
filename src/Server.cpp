@@ -180,7 +180,7 @@ void Server::ClientMessage(int fd) {
                 throw std::runtime_error("Error: Error while reading buffer from client.");
         }
         if (bytes_received == 0) {
-            std::cout << "JWIERGJWOIERJGIWER THIS IS NOT GOOD" << std::endl;
+            std::cout << "THIS IS NOT GOOD" << std::endl;
             ClientDisconnect(fd);
             return;
         }
@@ -190,16 +190,15 @@ void Server::ClientMessage(int fd) {
     std::string aux;
 
     while (std::getline(message, aux)) {
-        std::string cmd = aux.substr(0, aux.find(' '));
         try {
-            std::cout << "command is = " << cmd << std::endl;
+            std::string cmd = aux.substr(0, aux.find(' '));
             Command *command = commands_.at(cmd);
             std::vector<std::string> tokens;
             std::string buf;
             std::stringstream ss(aux.substr(cmd.length(), aux.length()));
             while (ss >> buf)
                 tokens.push_back(buf);
-            std::cout << "command is = " << cmd << " ";
+            std::cout << "Debug : command is = " << cmd << " ";
             for (long unsigned int i = 0; i < tokens.size(); i++) {
                 std::cout << tokens[i] << " ";
             }
@@ -213,7 +212,6 @@ void Server::ClientMessage(int fd) {
         catch(const std::out_of_range & e) {
             std::cout << "Error: command not found " << e.what() << std::endl;
         }
-        //Client *aux_client = s_clients.at(fd);
     }
 }
 
