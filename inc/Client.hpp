@@ -17,8 +17,8 @@ class Client {
         Channel     *channel_;
 
     public:
-        explicit Client(int fd);
-        ~Client();
+        explicit Client(const int Fd) : fd_(Fd), isAuth_(false), channel_(NULL) {}
+        ~Client(){ close(fd_); };
 
         int             GetFd() const { return fd_; };
         std::string     GetNickname() const { return nickname_; };

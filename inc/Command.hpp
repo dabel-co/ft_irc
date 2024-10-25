@@ -4,7 +4,6 @@
 
 #include "Server.hpp"
 
-#define RPL_WELCOME(who)		                    ("001 " + who + " :Welcome " + who + " to the ft_irc network")
 #define ERR_ALREADYREGISTRED(who)                   ("462 " + who + " :You may not reregister")
 #define ERR_NEEDMOREPARAMS(who, what)               ("461 " + who + " " + what + " :Not enough parameters")
 #define ERR_PASSWDMISMATCH(who)                     ("464 " + who + " :Password incorrect")
@@ -19,13 +18,19 @@
 #define RPL_ENDOFNAMES(who, channel)                ("366 " + who + " " + channel + " :End of /NAMES list.")
 #define ERR_CHANOPRIVSNEEDED(who, channel)          ("482 " + who + " " + channel + " :You're not channel operator")
 #define ERR_NOTONCHANNEL(who, channel)			    ("442 " + who + " " + channel + " :You're not on that channel")
-
+#define ERR_UNKNOWNMODE(who, what)					("472 " + who + " :" + what)
+#define ERR_USERONCHANNEL(who, channel)             ("443 " + who + " " + channel + " :is already on channel")
+#define ERR_INVITEONLYCHAN(channel)                 ("473 " + channel + " :Cannot join channel (+i)")
 #define RPL_JOIN(who, channel)					    (":" + who + " JOIN :" + channel)
 #define RPL_PRIVMSG(who, dst, message)		        (":" + who + " PRIVMSG " + dst + " :" + message)
 #define RPL_PING(who, token)			            (":" + who + " PONG :" + token)
-#define RPL_KICK(who, channel, target, reason)	    (":" + who + " KICK " + channel + " " + target + " :" + message)
-#define RPL_PART(who, channel)					    (":" + who + " PART " + channel)
-#define RPL_QUIT(who, message)		                (":" + who + " QUIT :Quit: " + message)
+#define RPL_KICK(who, channel, target, reason)	    (":" + who + " KICK " + channel + " " + target + message)
+#define RPL_PART(who, channel, reason)				(":" + who + " PART " + channel + reason)
+#define RPL_QUIT(who, message)		                (":" + who + " QUIT " + message)
+#define RPL_NOTOPIC(channel)		                ("331 " + channel + " :No topic is set")
+#define RPL_TOPIC(channel, topic)		            ("332 " + channel + " :" + topic)
+#define RPL_WELCOME(who)		                    ("001 " + who + " :Welcome " + who + " to the ft_irc network")
+#define RPL_INVITING(channel, who)                  ("341 " + channel + " " + who)
 
 class Command{
     protected:
@@ -34,8 +39,7 @@ class Command{
     public:
         explicit Command(Server *server) : server_(server){};
         virtual ~Command(){};
-
-
+    
         virtual void Execute(Client *client, std::vector<std::string> tokens) = 0;
 };
 
@@ -52,7 +56,7 @@ class CapCommand : public Command{
         explicit CapCommand(Server *server_) : Command(server_) {}
         ~CapCommand() {}
 
-        void Execute(Client *client, std::vector<std::string> tokens){}
+        void Execute(Client *client, std::vector<std::string> tokens);
 };
 
 class PassCommand : public Command{
@@ -125,6 +129,22 @@ class PartCommand : public Command{
         ~PartCommand() {}
 
         void Execute(Client *client, std::vector<std::string> tokens);
+};
+
+class TopicCommand : public Command{
+public:
+    explicit TopicCommand(Server *server_) : Command(server_) {};
+    ~TopicCommand() {}
+
+    void Execute(Client *client, std::vector<std::string> tokens);
+};
+
+class InviteCommand : public Command{
+public:
+    explicit InviteCommand(Server *server_) : Command(server_) {};
+    ~InviteCommand() {}
+
+    void Execute(Client *client, std::vector<std::string> tokens);
 };
 
 #endif //COMMAND_H
