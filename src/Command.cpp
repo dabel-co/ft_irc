@@ -406,6 +406,6 @@ void InviteCommand::Execute(Client *client, const std::vector<std::string> token
     else {
         channel->AddInvite(dst->GetNickname());
         //client->Reply(RPL_INVITING(channel->GetName(), dst->GetNickname()));
-        dst->Reply("INVITE " + dst->GetNickname() + " :" + channel->GetName());
+        dst->Reply("INVITE " + client->GetNickname() + " :" + channel->GetName());
     }
 }

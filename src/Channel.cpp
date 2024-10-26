@@ -26,7 +26,7 @@ void Channel::AddClient(Client *client, const std::string& password) {
         return;
     }
     if (invite_ == true && std::find(invite_list_.begin(), invite_list_.end(), client->GetNickname()) == invite_list_.end()) {
-        client->Reply(ERR_INVITEONLYCHAN(name_));
+        client->Reply(ERR_INVITEONLYCHAN(client->GetNickname(), this->name_));
         return;
     }
     clients_.empty() ? clients_[client] = true : clients_[client] = false;

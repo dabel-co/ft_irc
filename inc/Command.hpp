@@ -12,6 +12,7 @@
 #define ERR_TOOMANYCHANNELS(who, channel)           ("405 " + who + " " + channel + " :You have joined too many channels")
 #define ERR_CHANNELISFULL(who, channel)	            ("471 " + who + " " + channel + " :Cannot join channel (+l)")
 #define ERR_BADCHANNELKEY(who, channel)	            ("475 " + who + " " + channel + " :Cannot join channel (+k)")
+#define ERR_INVITEONLYCHAN(who, channel)            ("473 " + who + " " + channel + " :Cannot join channel (+i)")
 #define ERR_NOSUCHCHANNEL(who, channel)	            ("403 " + who + " " + channel + " :No such channel")
 #define ERR_NOSUCHNICK(who, nickname)               ("401 " + who + " " + nickname + " :No such nick/channel")
 #define RPL_NAMREPLY(who, channel, clients)	        ("353 " + who + " = " + channel + " :" + clients)
@@ -20,7 +21,7 @@
 #define ERR_NOTONCHANNEL(who, channel)			    ("442 " + who + " " + channel + " :You're not on that channel")
 #define ERR_UNKNOWNMODE(who, what)					("472 " + who + " :" + what)
 #define ERR_USERONCHANNEL(who, channel)             ("443 " + who + " " + channel + " :is already on channel")
-#define ERR_INVITEONLYCHAN(channel)                 ("473 " + channel + " :Cannot join channel (+i)")
+
 #define RPL_JOIN(who, channel)					    (":" + who + " JOIN :" + channel)
 #define RPL_PRIVMSG(who, dst, message)		        (":" + who + " PRIVMSG " + dst + " :" + message)
 #define RPL_PING(who, token)			            (":" + who + " PONG :" + token)
