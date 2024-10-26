@@ -20,13 +20,13 @@ class Client {
         explicit Client(const int Fd) : fd_(Fd), isAuth_(false), channel_(NULL) {}
         ~Client(){ close(fd_); };
 
-        int             GetFd() const { return fd_; };
-        std::string     GetNickname() const { return nickname_; };
         void            SetNickname(const std::string& nickname) {this->nickname_ = nickname; };
-        std::string     GetUsername() const { return username_; };
         void            SetUsername(const std::string& username) {this->username_ = username; };
-        Channel*        GetChannel() const {return channel_;};
         void            SetChannel(Channel *channel) { channel_ = channel; };
+        std::string     GetNickname() const { return nickname_; };
+        std::string     GetUsername() const { return username_; };
+        Channel*        GetChannel() const {return channel_;};
+        int             GetFd() const { return fd_; };
 
         void            Authenticate() { isAuth_ = true; };
         bool            IsAuth() const { return isAuth_; };

@@ -78,7 +78,7 @@ Server::~Server(){
 }
 
 
-void Server::InitCommands(){
+void    Server::InitCommands(){
     commands_["PING"] =     new PingCommand(this);
     commands_["CAP"] =      new CapCommand(this);
     commands_["PASS"] =     new PassCommand(this);
@@ -94,12 +94,12 @@ void Server::InitCommands(){
     commands_["INVITE"] = 	new InviteCommand(this);
 }
 
-void Server::Run() {
+void    Server::Run() {
     while (running_)
         HandleEvents();
 }
 
-void Server::AddEpoll(const int fd, const uint32_t events) const {
+void    Server::AddEpoll(const int fd, const uint32_t events) const {
     epoll_event ev = {};
     ev.events = events;
     ev.data.fd = fd;
@@ -109,7 +109,7 @@ void Server::AddEpoll(const int fd, const uint32_t events) const {
         throw std::runtime_error("Error: failed to add file descriptor to epoll.");
 }
 
-void Server::HandleEvents() {
+void    Server::HandleEvents() {
     epoll_event ev_fd[MAX_EVENTS];
     const int num_events = epoll_wait(epfd_, ev_fd, MAX_EVENTS, -1);
     if (num_events == -1) 
@@ -128,7 +128,7 @@ void Server::HandleEvents() {
     }
 }
 
-void Server::ClientConnect() {
+void    Server::ClientConnect() {
     sockaddr_in client_addr = {};
     socklen_t s_size = sizeof(client_addr);
     const int fd = accept(server_socket_, reinterpret_cast<sockaddr *>(&client_addr), &s_size);
@@ -148,7 +148,7 @@ void Server::ClientConnect() {
 
 }
 
-void Server::ClientDisconnect(const int fd) {
+void    Server::ClientDisconnect(const int fd) {
 
     // Remove client from channel
     if (clients_[fd]->GetChannel())
@@ -167,7 +167,7 @@ void Server::ClientDisconnect(const int fd) {
     std::cout << "Debug: Server.client_disconnect: Number of Clients = " << clients_.size() << "\n";
 }
 
-void Server::ClientMessage(int fd) {
+void    Server::ClientMessage(int fd) {
     //std::cout << "REQUEST!"  << std::endl;
     std::stringstream message;
     char buffer[100];
@@ -210,13 +210,11 @@ void Server::ClientMessage(int fd) {
             break;
         }
         catch(const std::out_of_range & e) {
-            std::cout << "Error: command not found " << e.what() << std::endl;
         }
     }
 }
 
-Client*	Server::FindClient(const std::string &nick){
-
+Client*     Server::FindClient(const std::string &nick) {
 	for (std::map<int, Client *>::iterator it = clients_.begin(); it != clients_.end(); ++it) {
 		if (nick == it->second->GetNickname())
 			return it->second;
@@ -224,7 +222,7 @@ Client*	Server::FindClient(const std::string &nick){
 	return (NULL);
 }
 
-Channel* Server::FindChannel(const std::string &name) const {
+Channel*    Server::FindChannel(const std::string &name) const {
     try {
         Channel* aux = channels_.at(name);
         return aux;
@@ -234,9 +232,7 @@ Channel* Server::FindChannel(const std::string &name) const {
     }
 }
 
-Channel* Server::CreateChannel(const std::string &name, const std::string &password) {
+Channel*    Server::CreateChannel(const std::string &name, const std::string &password) {
     channels_[name] = new Channel(name, password);
     return channels_.at(name);
 }
-
-

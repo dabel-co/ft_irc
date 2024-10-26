@@ -3,7 +3,7 @@
 #include "../inc/Channel.hpp"
 
 // Ping
-void PingCommand::Execute(Client *client, const std::vector<std::string> tokens){
+void    PingCommand::Execute(Client *client, const std::vector<std::string> tokens){
     if (tokens.empty()) {
         std::cout << "PongCommand::Execute: missing arguments" << std::endl;
         return;
@@ -12,7 +12,7 @@ void PingCommand::Execute(Client *client, const std::vector<std::string> tokens)
 }
 
 // Password
-void PassCommand::Execute(Client *client, const std::vector<std::string> tokens){
+void    PassCommand::Execute(Client *client, const std::vector<std::string> tokens){
     if (client->IsAuth())
         client->Reply(ERR_ALREADYREGISTRED(client->GetNickname()));
     else if (tokens.size() != 1)
@@ -26,14 +26,14 @@ void PassCommand::Execute(Client *client, const std::vector<std::string> tokens)
     }
 }
 // Cap
-void CapCommand::Execute(Client *client, std::vector<std::string> tokens) {
+void    CapCommand::Execute(Client *client, std::vector<std::string> tokens) {
     //client->Write("CAP * LS :");
    if (client && !tokens.empty())
        tokens[0].empty();
 }
 
-//Nick
-void NickCommand::Execute(Client *client, const std::vector<std::string> tokens){
+// Nick
+void    NickCommand::Execute(Client *client, const std::vector<std::string> tokens){
     if(!client->IsAuth()){
         client->Reply("464 :Password incorrect");
         server_->ClientDisconnect(client->GetFd());
@@ -90,25 +90,25 @@ void NickCommand::Execute(Client *client, const std::vector<std::string> tokens)
 
 
 // User
-void UserCommand::Execute(Client *client, const std::vector<std::string> tokens){
+void    UserCommand::Execute(Client *client, const std::vector<std::string> tokens){
     if(client->GetNickname().empty()){
-    	client->Reply(ERR_NONICKNAMEGIVEN(client->GetNickname()));
-    	server_->ClientDisconnect(client->GetFd());
-	 	throw(std::runtime_error("Tried to give USER without a NICK in use"));
+        client->Reply(ERR_NONICKNAMEGIVEN(client->GetNickname()));
+        server_->ClientDisconnect(client->GetFd());
+        throw(std::runtime_error("Tried to give USER without a NICK in use"));
     }
     if (!client->GetUsername().empty())
-		client->Reply(ERR_ALREADYREGISTRED(client->GetNickname()));
+        client->Reply(ERR_ALREADYREGISTRED(client->GetNickname()));
     else if (tokens.empty()) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "USER"));
     }
     else if (!tokens[0].empty()){
-    	client->SetUsername(tokens[0]);
-    	client->Reply(RPL_WELCOME(client->GetNickname()));
+        client->SetUsername(tokens[0]);
+        client->Reply(RPL_WELCOME(client->GetNickname()));
     }
 }
 
 // Quit
-void QuitCommand::Execute(Client *client, const std::vector<std::string> tokens){
+void    QuitCommand::Execute(Client *client, const std::vector<std::string> tokens){
     std::string message;
     std::cout << "tokens size = " << tokens.size() << std::endl;
     for (unsigned long i = 0; i < tokens.size(); i++)
@@ -123,7 +123,7 @@ void QuitCommand::Execute(Client *client, const std::vector<std::string> tokens)
 }
 
 // Join
-void JoinCommand::Execute(Client *client, const std::vector<std::string> tokens){
+void    JoinCommand::Execute(Client *client, const std::vector<std::string> tokens){
     if (client->GetUsername().empty())
         return;
     if (tokens.empty()) {
@@ -165,14 +165,16 @@ void JoinCommand::Execute(Client *client, const std::vector<std::string> tokens)
 }
 
 // Msg
-void MsgCommand::Execute(Client *client, const std::vector<std::string> tokens) {
+void    MsgCommand::Execute(Client *client, const std::vector<std::string> tokens) {
+    if (client->GetUsername().empty())
+        return;
     if (tokens.size() < 2) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "PRIVMSG"));
         return ;
     }
     std::string message;
-	for (unsigned long i = 1; i < tokens.size(); i++)
-    	message.append(tokens[i] + " ");
+    for (unsigned long i = 1; i < tokens.size(); i++)
+        message.append(tokens[i] + " ");
     message = message.at(0) == ':' ? message.substr(1) : message;
     for (size_t i = 0; i < message.length(); ++i) {
         const char c = message[i];
@@ -203,7 +205,9 @@ void MsgCommand::Execute(Client *client, const std::vector<std::string> tokens) 
 }
 
 // Kick
-void KickCommand::Execute(Client *client, const std::vector<std::string> tokens) {
+void    KickCommand::Execute(Client *client, const std::vector<std::string> tokens) {
+    if (client->GetUsername().empty())
+        return;
     if (tokens.size() < 2) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "KICK"));
         return ;
@@ -237,7 +241,9 @@ void KickCommand::Execute(Client *client, const std::vector<std::string> tokens)
 }
 
 // Part
-void PartCommand::Execute(Client *client, std::vector<std::string> tokens) {
+void    PartCommand::Execute(Client *client, std::vector<std::string> tokens) {
+    if (client->GetUsername().empty())
+        return;
     if (tokens.empty()) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "PART"));
         return ;
@@ -258,7 +264,10 @@ void PartCommand::Execute(Client *client, std::vector<std::string> tokens) {
     channel->EraseClient(client, "PART", message);
 }
 
-void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {
+// Mode
+void    ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {
+    if (client->GetUsername().empty())
+        return;
     if (tokens.size() < 2 || tokens[1].size() < 2) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "MODE"));
         return;
@@ -289,12 +298,11 @@ void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {
     char op = tokens[1].at(0);
     char flag = tokens[1].at(1);
     Client *dst = NULL;
-    //std::cout << "Token size = " << tokens.size() << std::endl;
     switch (flag) {
         case 'i': // invite only
             op == '+' ? aux->SetInvite(true) : aux->SetInvite(false);
             break;
-        case 't': //topic can change only if operator
+        case 't': // topic can change only if operator
             op == '+' ? aux->SetTopicRestriction(true) : aux->SetTopicRestriction(false);
             break;
         case 'k': // password
@@ -304,7 +312,7 @@ void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {
             }
             op == '+' ? aux->SetPassword(tokens[2]) : aux->SetPassword("");
             break;
-        case 'o' ://give operator
+        case 'o' : // give operator
             if (tokens.size() != 3 || tokens[2].empty()) {
                 client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "MODE"));
                 return ;
@@ -316,19 +324,19 @@ void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {
             }
             op == '+' ? aux->SetOperator(dst, true) : aux->SetOperator(dst, false);
             break;
-        case 'l' : { //user limit
+        case 'l' : { // user limit
             if (op == '-')
                 aux->SetMaxClients(0);
             else if (op == '+' && (tokens.size() != 3 || tokens[2].empty()))
                 client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "MODE"));
             else {
-            int limit;
-            std::stringstream ss(tokens[2]);
-            ss >> limit;
-            if (ss.fail() || !ss.eof() || (limit > 100) || limit < 0)
-                client->Reply(ERR_UNKNOWNMODE(client->GetNickname(), "Invalid value"));
-            else
-                aux->SetMaxClients(limit);
+                int limit;
+                std::stringstream ss(tokens[2]);
+                ss >> limit;
+                if (ss.fail() || !ss.eof() || (limit > 100) || limit < 0)
+                    client->Reply(ERR_UNKNOWNMODE(client->GetNickname(), "Invalid value"));
+                else
+                    aux->SetMaxClients(limit);
             }
             break;
         }
@@ -338,8 +346,10 @@ void ModeCommand::Execute(Client *client, std::vector<std::string> tokens) {
     }
 }
 
-//topic
-void TopicCommand::Execute(Client *client, const std::vector<std::string> tokens) {
+// Topic
+void    TopicCommand::Execute(Client *client, const std::vector<std::string> tokens) {
+    if (client->GetUsername().empty())
+        return;
     if (tokens.size() < 1) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "TOPIC"));
         return ;
@@ -385,8 +395,9 @@ void TopicCommand::Execute(Client *client, const std::vector<std::string> tokens
     }
 }
 
-
-void InviteCommand::Execute(Client *client, const std::vector<std::string> tokens) {
+void    InviteCommand::Execute(Client *client, const std::vector<std::string> tokens) {
+    if (client->GetUsername().empty())
+        return;
     if (tokens.size() != 2) {
         client->Reply(ERR_NEEDMOREPARAMS(client->GetNickname(), "TOPIC"));
         return ;
@@ -405,7 +416,6 @@ void InviteCommand::Execute(Client *client, const std::vector<std::string> token
         dst->Reply(ERR_USERONCHANNEL(dst->GetNickname(), tokens[1]));
     else {
         channel->AddInvite(dst->GetNickname());
-        //client->Reply(RPL_INVITING(channel->GetName(), dst->GetNickname()));
         dst->Reply("INVITE " + client->GetNickname() + " :" + channel->GetName());
     }
 }
