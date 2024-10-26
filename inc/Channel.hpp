@@ -31,7 +31,8 @@ class Channel {
 
         void            SetTopic(const std::string & topic) { topic_ = topic; };
         void            SetTopicRestriction(bool restrict) {this->topic_restriction_ = restrict; };
-        bool            GetTopicRestriction() { return topic_restriction_; };
+        bool            GetTopicRestriction() const { return topic_restriction_; };
+        std::string     GetTopic() { return topic_; };
         std::string     GetPassword() const { return password_; };
         void            SetPassword(const std::string& password) {this->password_ = password;};
 
@@ -43,7 +44,7 @@ class Channel {
 
         void            SetOperator(Client *dst, const bool mode) {
             std::cout << "Client " << dst << " is now = " << mode << std::endl;
-            clients_[dst] = mode; //hmmm....
+            clients_[dst] = mode;
         };
         void            AddInvite(std::string client) {
             invite_list_.push_back(client);

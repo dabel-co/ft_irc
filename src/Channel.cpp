@@ -3,14 +3,11 @@
 #include "../inc/Command.hpp"
 
 Channel::Channel(const std::string& name, const std::string& password) : name_(name), password_(password), maxClients_(0), invite_(false), topic_restriction_(true) {
-  //std::cout << "Channel created!" << std::endl;
+
 }
 
 Channel::~Channel(){
-    //std::cout << "Channel destroyed!" << std::endl;
     clients_.clear();
-    //server_->DestroyChannel(this->name_);
-    //std::cout << "Channel destroyed!" << std::endl;
 }
 
 void	Channel::Broadcast(const std::string& message, const Client *src){
@@ -43,7 +40,7 @@ void Channel::AddClient(Client *client, const std::string& password) {
     if (topic_.empty())
         client->Reply(RPL_NOTOPIC(this->name_));
     else
-        client->Reply(RPL_TOPIC(this->name_, topic_));
+        client->Reply("332 " + client->GetNickname() + " " + this->name_ + " :" + topic_);
     client->Reply(RPL_NAMREPLY(client->GetNickname(), this->name_, client_list));
     client->Reply(RPL_ENDOFNAMES(client->GetNickname(), this->name_));
     Broadcast(RPL_JOIN(client->GetPrefix(), this->name_), client);
@@ -64,6 +61,6 @@ void Channel::EraseClient(Client *client, std::string reason, std::string messag
         this->topic_ = "";
         this->invite_ = false;
         this->topic_restriction_ = false;
+        invite_list_.clear();
     }
-        //server_->DestroyChannel(this->name_);
 }
