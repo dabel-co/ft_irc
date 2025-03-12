@@ -1,7 +1,7 @@
 # ft_irc
 A lightweight IRC (Internet Relay Chat) server implementation written in C++98, utilizing POSIX sockets and epoll for efficient asynchronous I/O. Supports standard IRC commands for multi-user communication and channel management.
 
-Check the small article about the multiplexing choice [here](https://0x2a.cx/2024/12/20/hr-example.html)
+Check the small article about the multiplexing choice [here](https://0x2a.cx/irc/)
 
 ## Features
 
